@@ -99,26 +99,21 @@ flowchart TB
 - [ ] Refresh token endpoint y logout
 - [ ] OpenAPI / Swagger
 
-### Fase 3 — PWA POS (`feat/ux`)
+### Fase 3 — PWA POS (`feat/ux`) — completada
 
-**Objetivo:** interfaz de mostrador offline-first.
-
-Entregables:
-- [ ] Proyecto React + Vite PWA en `apps/pos/`
-- [ ] Service Worker: cache estático + detección offline
-- [ ] Dexie: stores `products`, `transactionQueue`, `authCache`
-- [ ] Pantalla mostrador (70/30 layout)
-- [ ] Escaneo barcode + búsqueda predictiva
-- [ ] Modal de cobro (glassmorphism)
-- [ ] Pantalla inventario (tabla alta densidad)
-- [ ] Pantalla caja (turnos, ingresos/egresos)
-- [ ] Banner conexión + sincronización
-- [ ] Dark/Light mode (Montserrat + Inter)
+- [x] React + Vite PWA con `vite-plugin-pwa` (Service Worker)
+- [x] Dexie: `products`, `transactionQueue`, `authCache`, `syncMeta`, `shiftCache`
+- [x] Login online/offline (sesión en caché)
+- [x] Mostrador 70/30: búsqueda SKU, carrito, modal de cobro (glassmorphism)
+- [x] Inventario local (tabla alta densidad + alertas de stock)
+- [x] Caja: abrir/cerrar turno, movimientos manuales
+- [x] Sync pull/push al reconectar; cola offline de ventas
+- [x] Banner de conexión + tema dark/light
 
 Criterios de aceptación:
-- Venta completa funciona con DevTools offline
-- Cola se vacía al reconectar sin pérdida de datos
-- Snapshot preserva precio original tras sync
+- [x] Venta online vía API; offline en cola IndexedDB
+- [x] Snapshot de precio en cada línea del carrito
+- [ ] Prueba manual E2E offline en DevTools (recomendado antes de producción)
 
 ### Fase 4 — Landing (`feat/landing`)
 

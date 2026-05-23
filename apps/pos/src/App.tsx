@@ -1,40 +1,36 @@
-import { useEffect, useState } from "react";
-
-type ApiStatus = {
-  status: string;
-  database?: string;
-};
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext.js";
+import { CartProvider } from "./context/CartContext.js";
+import { Layout } from "./components/Layout.js";
+import { ProtectedRoute } from "./components/ProtectedRoute.js";
+import { LoginPage } from "./pages/LoginPage.js";
+import { PosPage } from "./pages/PosPage.js";
+import { InventoryPage } from "./pages/InventoryPage.js";
+import { CashPage } from "./pages/CashPage.js";
 
 export default function App() {
-  const [apiStatus, setApiStatus] = useState<ApiStatus | null>(null);
-
-  useEffect(() => {
-    fetch("/api/status")
-      .then((res) => res.json())
-      .then(setApiStatus)
-      .catch(() => setApiStatus({ status: "offline" }));
-  }, []);
-
   return (
-    <div className="app">
-      <header>
-        <h1>Refaccionaria Fortino</h1>
-        <p>Punto de Venta — scaffold (feat/ux)</p>
-      </header>
-      <main className="layout">
-        <section className="cart-panel">
-          <h2>Carrito</h2>
-          <p className="placeholder">70% — lista de compra (Fase 3)</p>
-        </section>
-        <aside className="checkout-panel">
-          <h2>Cobro</h2>
-          <p className="placeholder">30% — totalizador (Fase 3)</p>
-          <p className="status">
-            API: {apiStatus?.status ?? "conectando..."}
-            {apiStatus?.database ? ` · BD: ${apiStatus.database}` : ""}
-          </p>
-        </aside>
-      </main>
-    </div>
+    <BrowserRouter basename="/pos">
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <CartProvider>
+                  <Layout />
+                </CartProvider>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<PosPage />} />
+            <Route path="inventario" element={<InventoryPage />} />
+            <Route path="caja" element={<CashPage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

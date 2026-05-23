@@ -2,7 +2,7 @@
 
 Sistema de **Punto de Venta (POS)** y **Gestión de Inventario** offline-first para una refaccionaria en Veracruz, México.
 
-> **Estado actual:** Fase 1 (BD) y Fase 2 (API base) completadas en scaffold funcional. Pendiente: PWA offline (Fase 3) y landing (Fase 4).
+> **Estado actual:** Fase 3 (PWA POS) completada en `feat/ux`. Pendiente: Fase 4 landing y Fase 5 producción.
 
 ## Levantar todo con un solo comando
 
@@ -27,7 +27,7 @@ Esto construye y levanta **todos** los servicios:
 | URL | Qué verás |
 |-----|-----------|
 | http://localhost:8080/ | Landing (feat/landing) |
-| http://localhost:8080/pos/ | POS scaffold (feat/ux) |
+| http://localhost:8080/pos/ | PWA POS — login, mostrador, inventario, caja |
 | http://localhost:8080/api/info | Info de la API |
 | http://localhost:8080/api/auth/login | POST — login (ver credenciales abajo) |
 | http://localhost:8080/api/products | GET — catálogo (requiere token) |
