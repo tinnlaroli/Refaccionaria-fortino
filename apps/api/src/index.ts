@@ -9,6 +9,7 @@ import categoriesRoutes from "./routes/categories.js";
 import productsRoutes from "./routes/products.js";
 import salesRoutes from "./routes/sales.js";
 import syncRoutes from "./routes/sync.js";
+import publicRoutes from "./routes/public.js";
 import usersRoutes from "./routes/users.js";
 
 const app = express();
@@ -49,10 +50,12 @@ app.get("/api/info", (_req, res) => {
       cash: "/api/cash",
       sync: "/api/sync",
       users: "/api/users",
+      public: "/api/public",
     },
   });
 });
 
+app.use("/api/public", publicRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/categories", categoriesRoutes);

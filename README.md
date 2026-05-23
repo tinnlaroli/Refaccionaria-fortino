@@ -2,7 +2,7 @@
 
 Sistema de **Punto de Venta (POS)** y **Gestión de Inventario** offline-first para una refaccionaria en Veracruz, México.
 
-> **Estado actual:** Fase 3 (PWA POS) completada en `feat/ux`. Pendiente: Fase 4 landing y Fase 5 producción.
+> **Estado actual:** Fases 1–4 completadas (BD, API, POS, landing). Pendiente: Fase 5 producción.
 
 ## Levantar todo con un solo comando
 
@@ -30,7 +30,8 @@ Esto construye y levanta **todos** los servicios:
 | http://localhost:8080/pos/ | PWA POS — login, mostrador, inventario, caja |
 | http://localhost:8080/api/info | Info de la API |
 | http://localhost:8080/api/auth/login | POST — login (ver credenciales abajo) |
-| http://localhost:8080/api/products | GET — catálogo (requiere token) |
+| http://localhost:8080/api/public/products | GET — catálogo público (sin auth) |
+| http://localhost:8080/api/products | GET — catálogo interno (requiere token) |
 
 ### Credenciales de prueba (seed)
 

@@ -115,19 +115,20 @@ Criterios de aceptación:
 - [x] Snapshot de precio en cada línea del carrito
 - [ ] Prueba manual E2E offline en DevTools (recomendado antes de producción)
 
-### Fase 4 — Landing (`feat/landing`)
+### Fase 4 — Landing (`feat/landing`) — completada
 
 **Objetivo:** presencia web pública de la refaccionaria.
 
 Entregables:
-- [ ] Proyecto React/Vite en `apps/landing/`
-- [ ] Páginas: inicio, catálogo público (opcional), contacto/ubicación
-- [ ] SEO básico, responsive, accesible
-- [ ] Mismo design system (tipografías, temas)
+- [x] Proyecto React/Vite en `apps/landing/`
+- [x] Páginas: inicio, catálogo público, contacto/ubicación
+- [x] SEO básico (meta, Open Graph), responsive, accesible
+- [x] Mismo design system (Montserrat/Inter, dark/light)
+- [x] API pública: `GET /api/public/products`, `GET /api/public/categories`
 
 Criterios de aceptación:
-- Lighthouse Performance > 90 en mobile
-- Información de contacto y ubicación visibles
+- [ ] Lighthouse Performance > 90 en mobile (validar manualmente)
+- [x] Información de contacto y ubicación visibles
 
 ### Fase 5 — Integración y producción
 

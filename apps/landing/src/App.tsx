@@ -1,25 +1,23 @@
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { useTheme } from "./hooks/useTheme";
+import { CatalogPage } from "./pages/CatalogPage";
+import { ContactPage } from "./pages/ContactPage";
+import { HomePage } from "./pages/HomePage";
+
 export default function App() {
+  const { theme, toggle } = useTheme();
+
   return (
-    <div className="page">
-      <header className="hero">
-        <h1>Refaccionaria Fortino</h1>
-        <p>Repuestos, aceites y refacciones para tu vehículo en Veracruz.</p>
-        <div className="actions">
-          <a href="/pos/" className="btn primary">
-            Ir al Punto de Venta
-          </a>
-          <a href="/api/info" className="btn ghost">
-            Estado del sistema
-          </a>
-        </div>
-      </header>
-      <section className="info">
-        <h2>Próximamente</h2>
-        <p>
-          Landing pública en desarrollo (rama <code>feat/landing</code>). Catálogo
-          en línea, ubicación y contacto.
-        </p>
-      </section>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout theme={theme} onToggleTheme={toggle} />}>
+          <Route index element={<HomePage />} />
+          <Route path="catalogo" element={<CatalogPage />} />
+          <Route path="contacto" element={<ContactPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
