@@ -1,0 +1,30 @@
+{
+  "name": "refaccionaria-fortino",
+  "private": true,
+  "version": "0.0.0",
+  "description": "POS e inventario offline-first para refaccionaria",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "echo \"Development not yet configured\"",
+    "build": "echo \"Build not yet configured\""
+  },
+  "dependencies": {
+    "dexie": "^4.0.11",
+    "express": "^5.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.2",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}
