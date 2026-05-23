@@ -29,7 +29,7 @@ router.get("/products", async (req, res) => {
   }
   if (q) {
     conditions.push(
-      or(ilike(products.sku, `%${q}%`), ilike(products.name, `%${q}%`))!,
+      or(ilike(products.sku, `%${q}%`), ilike(products.name, `%${q}%`)),
     );
   }
 

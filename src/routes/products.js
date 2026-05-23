@@ -4,7 +4,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db.js";
 import { logAudit } from "../lib/audit.js";
-import { requireAuth, requirePermission, type AuthRequest } from "../middleware/auth.js";
+import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -20,7 +20,7 @@ const productSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-router.get("/", requireAuth, async (req: AuthRequest, res) => {
+router.get("/", requireAuth, async (req, res) => {
   const q = typeof req.query.q === "string" ? req.query.q : "";
   const list = q
     ? await db
@@ -46,7 +46,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
   res.json(mapped);
 });
 
-router.get("/sku/:sku", requireAuth, async (req: AuthRequest, res) => {
+router.get("/sku/:sku", requireAuth, async (req, res) => {
   const [product] = await db
     .select()
     .from(products)
@@ -70,7 +70,7 @@ router.post(
   "/",
   requireAuth,
   requirePermission("products.create"),
-  async (req: AuthRequest, res) => {
+  async (req, res) => {
     const parsed = productSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.flatten() });
@@ -89,7 +89,7 @@ router.post(
       .returning();
 
     await logAudit({
-      userId: req.user!.sub,
+      userId: req.user.sub,
       action: "product.create",
       entityType: "product",
       entityId: created.id,
@@ -104,14 +104,14 @@ router.patch(
   "/:id",
   requireAuth,
   requirePermission("products.edit"),
-  async (req: AuthRequest, res) => {
+  async (req, res) => {
     const parsed = productSchema.partial().safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.flatten() });
       return;
     }
 
-    const data: Record<string, unknown> = { updatedAt: new Date() };
+    const data = { updatedAt: new Date() };
     if (parsed.data.name !== undefined) data.name = parsed.data.name;
     if (parsed.data.description !== undefined) data.description = parsed.data.description;
     if (parsed.data.isActive !== undefined) data.isActive = parsed.data.isActive;
@@ -138,7 +138,7 @@ router.patch(
     }
 
     await logAudit({
-      userId: req.user!.sub,
+      userId: req.user.sub,
       action: "product.update",
       entityType: "product",
       entityId: updated.id,

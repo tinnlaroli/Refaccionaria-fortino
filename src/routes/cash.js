@@ -3,7 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db.js";
-import { requireAuth, requirePermission, type AuthRequest } from "../middleware/auth.js";
+import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -11,7 +11,7 @@ router.post(
   "/shifts/open",
   requireAuth,
   requirePermission("cash.open_shift"),
-  async (req: AuthRequest, res) => {
+  async (req, res) => {
     const schema = z.object({ openingCash: z.string().or(z.number()).default(0) });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
@@ -24,7 +24,7 @@ router.post(
       .from(cashShifts)
       .where(
         and(
-          eq(cashShifts.userId, req.user!.sub),
+          eq(cashShifts.userId, req.user.sub),
           eq(cashShifts.status, "open"),
         ),
       )
@@ -38,7 +38,7 @@ router.post(
     const [shift] = await db
       .insert(cashShifts)
       .values({
-        userId: req.user!.sub,
+        userId: req.user.sub,
         openingCash: String(parsed.data.openingCash),
         status: "open",
       })
@@ -48,12 +48,12 @@ router.post(
   },
 );
 
-router.get("/shifts/current", requireAuth, async (req: AuthRequest, res) => {
+router.get("/shifts/current", requireAuth, async (req, res) => {
   const [shift] = await db
     .select()
     .from(cashShifts)
     .where(
-      and(eq(cashShifts.userId, req.user!.sub), eq(cashShifts.status, "open")),
+      and(eq(cashShifts.userId, req.user.sub), eq(cashShifts.status, "open")),
     )
     .limit(1);
 
@@ -64,7 +64,7 @@ router.post(
   "/shifts/:id/close",
   requireAuth,
   requirePermission("cash.close_shift"),
-  async (req: AuthRequest, res) => {
+  async (req, res) => {
     const schema = z.object({
       closingCashDeclared: z.string().or(z.number()),
     });
@@ -87,7 +87,7 @@ router.post(
 
     const [{ salesTotal }] = await db
       .select({
-        salesTotal: sql<string>`COALESCE(SUM(${sales.total}), 0)`,
+        salesTotal: sql`COALESCE(SUM(${sales.total}), 0)`,
       })
       .from(sales)
       .where(eq(sales.shiftId, shift.id));
@@ -131,7 +131,7 @@ router.post(
   "/movements",
   requireAuth,
   requirePermission("cash.register_movement"),
-  async (req: AuthRequest, res) => {
+  async (req, res) => {
     const schema = z.object({
       shiftId: z.string().uuid(),
       type: z.enum(["income", "expense"]),
@@ -151,7 +151,7 @@ router.post(
         type: parsed.data.type,
         amount: String(parsed.data.amount),
         note: parsed.data.note,
-        createdBy: req.user!.sub,
+        createdBy: req.user.sub,
       })
       .returning();
 

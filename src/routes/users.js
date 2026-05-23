@@ -5,7 +5,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db.js";
 import { logAudit } from "../lib/audit.js";
-import { requireAuth, requirePermission, type AuthRequest } from "../middleware/auth.js";
+import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -30,7 +30,7 @@ router.post(
   "/",
   requireAuth,
   requirePermission("users.manage"),
-  async (req: AuthRequest, res) => {
+  async (req, res) => {
     const schema = z.object({
       email: z.string().email(),
       password: z.string().min(6),
@@ -62,7 +62,7 @@ router.post(
       });
 
     await logAudit({
-      userId: req.user!.sub,
+      userId: req.user.sub,
       action: "user.create",
       entityType: "user",
       entityId: created.id,
@@ -76,7 +76,7 @@ router.patch(
   "/:id/deactivate",
   requireAuth,
   requirePermission("users.manage"),
-  async (req: AuthRequest, res) => {
+  async (req, res) => {
     const [updated] = await db
       .update(users)
       .set({ isActive: false, updatedAt: new Date() })
@@ -89,7 +89,7 @@ router.patch(
     }
 
     await logAudit({
-      userId: req.user!.sub,
+      userId: req.user.sub,
       action: "user.deactivate",
       entityType: "user",
       entityId: updated.id,

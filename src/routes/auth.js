@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db } from "../db.js";
 import { logAudit } from "../lib/audit.js";
 import { signAccessToken, signRefreshToken } from "../lib/jwt.js";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -85,7 +85,7 @@ router.post("/login", async (req, res) => {
   });
 });
 
-router.get("/me", requireAuth, async (req: AuthRequest, res) => {
+router.get("/me", requireAuth, async (req, res) => {
   const [user] = await db
     .select({
       id: users.id,
@@ -94,7 +94,7 @@ router.get("/me", requireAuth, async (req: AuthRequest, res) => {
       isActive: users.isActive,
     })
     .from(users)
-    .where(eq(users.id, req.user!.sub))
+    .where(eq(users.id, req.user.sub))
     .limit(1);
 
   if (!user) {
@@ -104,8 +104,8 @@ router.get("/me", requireAuth, async (req: AuthRequest, res) => {
 
   res.json({
     ...user,
-    role: req.user!.roleName,
-    permissions: req.user!.permissions,
+    role: req.user.roleName,
+    permissions: req.user.permissions,
   });
 });
 

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "../db.js";
 import { logAudit } from "../lib/audit.js";
 import { createSaleWithItems } from "../lib/create-sale.js";
-import { requireAuth, requirePermission, type AuthRequest } from "../middleware/auth.js";
+import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -28,7 +28,7 @@ router.post(
   "/",
   requireAuth,
   requirePermission("sales.create"),
-  async (req: AuthRequest, res) => {
+  async (req, res) => {
     const parsed = createSaleSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.flatten() });
@@ -49,14 +49,14 @@ router.post(
     try {
       const result = await createSaleWithItems({
         clientUuid: parsed.data.clientUuid,
-        cashierId: req.user!.sub,
+        cashierId: req.user.sub,
         shiftId: parsed.data.shiftId,
         soldAt: new Date(parsed.data.soldAt),
         items: parsed.data.items,
       });
 
       await logAudit({
-        userId: req.user!.sub,
+        userId: req.user.sub,
         action: "sale.create",
         entityType: "sale",
         entityId: result.id,
@@ -67,7 +67,7 @@ router.post(
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error en venta";
       await logAudit({
-        userId: req.user!.sub,
+        userId: req.user.sub,
         action: "sale.conflict",
         entityType: "sale",
         entityId: parsed.data.clientUuid,

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "../db.js";
 import { logAudit } from "../lib/audit.js";
 import { createSaleWithItems } from "../lib/create-sale.js";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -59,19 +59,14 @@ const pushSchema = z.object({
   ),
 });
 
-router.post("/push", requireAuth, async (req: AuthRequest, res) => {
+router.post("/push", requireAuth, async (req, res) => {
   const parsed = pushSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
 
-  const results: Array<{
-    clientUuid: string;
-    status: "ok" | "duplicate" | "error";
-    saleId?: string;
-    error?: string;
-  }> = [];
+  const results = [];
 
   for (const tx of parsed.data.transactions) {
     const existing = await db
@@ -92,14 +87,14 @@ router.post("/push", requireAuth, async (req: AuthRequest, res) => {
     try {
       const sale = await createSaleWithItems({
         clientUuid: tx.clientUuid,
-        cashierId: req.user!.sub,
+        cashierId: req.user.sub,
         shiftId: tx.shiftId,
         soldAt: new Date(tx.soldAt),
         items: tx.items,
       });
 
       await logAudit({
-        userId: req.user!.sub,
+        userId: req.user.sub,
         action: "sale.sync_push",
         entityType: "sale",
         entityId: sale.id,
@@ -110,7 +105,7 @@ router.post("/push", requireAuth, async (req: AuthRequest, res) => {
     } catch (err) {
       const error = err instanceof Error ? err.message : "Error";
       await logAudit({
-        userId: req.user!.sub,
+        userId: req.user.sub,
         action: "sale.sync_conflict",
         entityType: "sale",
         entityId: tx.clientUuid,

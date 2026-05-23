@@ -1,9 +1,6 @@
-import type { NextFunction, Request, Response } from "express";
-import { verifyToken, type TokenPayload } from "../lib/jwt.js";
+import { verifyToken } from "../lib/jwt.js";
 
-export type AuthRequest = Request & { user?: TokenPayload };
-
-export function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
+export function requireAuth(req, res, next) {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
     res.status(401).json({ error: "Token requerido" });
@@ -17,13 +14,13 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
 }
 
-export function requirePermission(...keys: string[]) {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+export function requirePermission(...keys) {
+  return (req, res, next) => {
     if (!req.user) {
       res.status(401).json({ error: "No autenticado" });
       return;
     }
-    const hasAll = keys.every((k) => req.user!.permissions.includes(k));
+    const hasAll = keys.every((k) => req.user.permissions.includes(k));
     if (!hasAll) {
       res.status(403).json({ error: "Permiso denegado", required: keys });
       return;

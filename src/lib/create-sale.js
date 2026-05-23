@@ -1,26 +1,8 @@
 import { products, saleItems, sales } from "@refaccionaria/db";
 import { and, eq, gte, sql } from "drizzle-orm";
-import type { createDb } from "@refaccionaria/db";
 import { db } from "../db.js";
 
-type DbInstance = ReturnType<typeof createDb>["db"];
-
-export type SaleItemInput = {
-  productId?: string;
-  sku: string;
-  productName: string;
-  unitPrice: string | number;
-  quantity: number;
-};
-
-export async function createSaleWithItems(params: {
-  clientUuid: string;
-  cashierId: string;
-  shiftId?: string | null;
-  soldAt: Date;
-  items: SaleItemInput[];
-  database?: DbInstance;
-}) {
+export async function createSaleWithItems(params) {
   const database = params.database ?? db;
 
   const lineItems = params.items.map((item) => {
