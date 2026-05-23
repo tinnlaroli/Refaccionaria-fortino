@@ -11,20 +11,15 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "dev": "echo \"Development not yet configured\"",
-    "build": "echo \"Build not yet configured\""
-  },
-  "dependencies": {
-    "dexie": "^4.0.11",
-    "express": "^5.1.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "zod": "^3.25.67"
-  },
-  "devDependencies": {
-    "drizzle-kit": "^0.31.4",
-    "drizzle-orm": "^0.44.2",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.5"
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:restart": "docker compose down && docker compose up --build -d",
+    "branch:api": "git checkout feat/api",
+    "branch:ux": "git checkout feat/ux",
+    "branch:landing": "git checkout feat/landing",
+    "branch:bd": "git checkout feat/bd",
+    "branch:main": "git checkout main",
+    "sync:branches": "powershell -ExecutionPolicy Bypass -File scripts/sync-branches.ps1"
   }
 }

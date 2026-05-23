@@ -11,5 +11,5 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "include": ["apps/**/*", "packages/**/*", "vite.config.ts"]
+  "include": ["apps/**/*", "packages/**/*"]
 }

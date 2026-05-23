@@ -9,47 +9,40 @@ description: >-
 
 ## Rama principal
 
-- `main` — estable; solo merges vía PR revisados.
+- `main` — integración: Docker, gateway, docs. Ejecutar `npm run docker:up` solo desde main.
 
 ## Ramas de feature (prefijo `feat/`)
 
-| Rama | Scope | Directorio |
-|------|-------|------------|
-| `feat/bd` | Esquema PostgreSQL, migraciones Drizzle, seeds, índices | `packages/db/` |
-| `feat/api` | API Node.js: auth JWT, RBAC, sync, ventas, caja, auditoría | `apps/api/` |
-| `feat/ux` | PWA POS: Dexie, Service Worker, UI mostrador/inventario/caja | `apps/pos/` |
-| `feat/landing` | Sitio público / marketing | `apps/landing/` |
+| Rama | Carpeta | Scope |
+|------|---------|-------|
+| `feat/bd` | `packages/db/` | Esquema PostgreSQL, migraciones Drizzle, seeds |
+| `feat/api` | `apps/api/` | Auth JWT, RBAC, sync, ventas, caja, auditoría |
+| `feat/ux` | `apps/pos/` | PWA POS: Dexie, Service Worker, UI |
+| `feat/landing` | `apps/landing/` | Sitio público / marketing |
 
 ## Reglas
 
-1. Una rama = un dominio. No mezclar cambios de API y UX en el mismo PR.
-2. Cambios compartidos (tipos, contratos API) van en `packages/` y se coordinan entre ramas.
-3. Commits: prefijo convencional (`feat:`, `fix:`, `chore:`, `docs:`).
-4. PR hacia `main` requiere descripción de módulo afectado y plan de prueba.
+1. Una rama = un dominio. No mezclar API y UX en el mismo PR.
+2. Cambios en `docker-compose.yml` o `docker/` → PR a `main`.
+3. Tras merge a `main`, ejecutar `npm run sync:branches`.
+4. Commits: prefijo convencional (`feat:`, `fix:`, `chore:`, `docs:`).
 5. No force-push a `main`.
 
-## Orden de dependencias sugerido
+## Cambiar de módulo
 
-```
-feat/bd  →  feat/api  →  feat/ux
-                ↘
-              feat/landing (paralelo, depende mínimo de API pública)
-```
-
-## Setup local por rama
-
-```bash
-git checkout feat/api    # trabajo backend
-git checkout feat/ux     # trabajo frontend POS
-git checkout feat/bd     # trabajo base de datos
-git checkout feat/landing
+```powershell
+powershell -File scripts/checkout-module.ps1 -Module api
+powershell -File scripts/checkout-module.ps1 -Module pos
+powershell -File scripts/checkout-module.ps1 -Module landing
+powershell -File scripts/checkout-module.ps1 -Module bd
 ```
 
-## Archivos compartidos (cualquier rama)
+## Worktrees paralelos (opcional)
 
-- `README.md`, `plan.md` — documentación raíz
-- `.agents/skills/` — agent skills del proyecto
-- `docker-compose.yml` — infra local
-- `package.json` raíz — workspaces
+```powershell
+powershell -File scripts/setup-worktrees.ps1
+```
 
-Coordinar cambios en raíz en PRs pequeños o desde `main` directamente.
+## Docker
+
+Solo la raíz (`main`) orquesta el stack: `npm run docker:up` → http://localhost:8080

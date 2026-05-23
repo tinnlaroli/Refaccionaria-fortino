@@ -71,9 +71,12 @@ flowchart TB
 
 - [x] Repositorio clonado y conectado a GitHub
 - [x] README, plan.md, agent skills (`.agents/skills/`)
-- [x] Stubs de detección de stack (`package.json`, `tsconfig.json`, etc.)
 - [x] Ramas `feat/*` creadas
-- [x] `docker-compose.yml` con PostgreSQL 16
+- [x] Monorepo: `apps/api`, `apps/pos`, `apps/landing`, `packages/db`
+- [x] Docker Compose unificado en raíz (`main`) — `npm run docker:up`
+- [x] Gateway nginx en **http://localhost:8080** (landing + POS + API)
+- [x] Scaffolds mínimos ejecutables en cada módulo
+- [x] Scripts: `checkout-module.ps1`, `setup-worktrees.ps1`, `sync-branches.ps1`
 
 ### Fase 1 — Base de datos (`feat/bd`)
 

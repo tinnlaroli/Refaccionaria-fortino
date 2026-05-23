@@ -1,0 +1,60 @@
+:root {
+  font-family: "Inter", system-ui, sans-serif;
+  color: #fafaf9;
+  background: #1c1917;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+h1,
+h2 {
+  font-family: "Montserrat", sans-serif;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #292524;
+}
+
+header p {
+  margin: 0.25rem 0 0;
+  color: #a8a29e;
+}
+
+.layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 7fr 3fr;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.cart-panel,
+.checkout-panel {
+  background: #292524;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.placeholder {
+  color: #78716c;
+}
+
+.status {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: #a8a29e;
+}
