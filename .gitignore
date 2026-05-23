@@ -1,31 +1,5 @@
-# Dependencies
-node_modules/
-
-# Build outputs
+﻿node_modules/
 dist/
-build/
-*.tsbuildinfo
-
-# Environment
 .env
-.env.*
-!.env.example
-
-# Logs
-logs/
 *.log
-npm-debug.log*
-
-# OS / IDE
 .DS_Store
-Thumbs.db
-.idea/
-.vscode/
-*.swp
-
-# Docker local overrides
-docker-compose.override.yml
-
-worktrees/
-.split-modules/
-agents-stash/
