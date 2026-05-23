@@ -4,7 +4,7 @@ import postgres from "postgres";
 
 const connectionString =
   process.env.DATABASE_URL ??
-  "postgresql://refaccionaria:refaccionaria_dev@postgres:5432/refaccionaria";
+  "postgresql://refaccionaria:refaccionaria_dev@localhost:5432/refaccionaria";
 
 async function runMigrations() {
   const sql = postgres(connectionString, { max: 1 });

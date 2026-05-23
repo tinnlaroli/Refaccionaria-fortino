@@ -1,7 +1,7 @@
 {
   "name": "refaccionaria-fortino",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "POS e inventario offline-first para refaccionaria",
   "workspaces": [
     "apps/*",
@@ -15,6 +15,10 @@
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
     "docker:restart": "docker compose down && docker compose up --build -d",
+    "db:migrate": "npm run migrate -w @refaccionaria/db",
+    "db:seed": "npm run seed -w @refaccionaria/db",
+    "db:build": "npm run build -w @refaccionaria/db",
+    "api:dev": "npm run build -w @refaccionaria/db && npm run dev -w @refaccionaria/api",
     "branch:api": "git checkout feat/api",
     "branch:ux": "git checkout feat/ux",
     "branch:landing": "git checkout feat/landing",

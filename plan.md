@@ -78,40 +78,26 @@ flowchart TB
 - [x] Scaffolds mínimos ejecutables en cada módulo
 - [x] Scripts: `checkout-module.ps1`, `setup-worktrees.ps1`, `sync-branches.ps1`
 
-### Fase 1 — Base de datos (`feat/bd`)
+### Fase 1 — Base de datos (`feat/bd`) — completada
 
-**Objetivo:** esquema relacional completo en PostgreSQL.
+- [x] Proyecto Drizzle en `packages/db/`
+- [x] Tablas: users, roles, permissions, role_permissions, products, categories, product_images, sales, sale_items, cash_shifts, cash_movements, audit_logs, sync_cursors
+- [x] Migraciones versionadas (`migrations/0000_initial_schema.sql`)
+- [x] Seeds: admin, cajero, categorías, productos de prueba
+- [x] Índices: `products.sku`, `sales.sold_at`, `audit_logs.created_at`
 
-Entregables:
-- [ ] Proyecto Drizzle en `packages/db/`
-- [ ] Tablas: `users`, `roles`, `permissions`, `role_permissions`, `products`, `categories`, `product_images`, `sales`, `sale_items`, `cash_shifts`, `cash_movements`, `audit_logs`, `sync_cursors`
-- [ ] Migraciones versionadas
-- [ ] Seeds: admin inicial, categorías base, productos de prueba
-- [ ] Índices: `products.sku`, `sales.sold_at`, `audit_logs.created_at`
+### Fase 2 — API backend (`feat/api`) — en progreso
 
-Criterios de aceptación:
-- `docker compose up -d && npm run db:migrate` crea esquema sin errores
-- Seeds insertan datos reproducibles
-
-### Fase 2 — API backend (`feat/api`)
-
-**Objetivo:** API REST stateless con auth, RBAC y sincronización.
-
-Entregables:
-- [ ] Proyecto Express + TypeScript en `apps/api/`
-- [ ] Auth: login, refresh, logout; JWT con claims de rol/permisos
-- [ ] RBAC middleware granular
-- [ ] CRUD productos, categorías, usuarios (solo admin)
-- [ ] Endpoints ventas con snapshot de precios
-- [ ] Endpoints caja: turnos, movimientos, corte
-- [ ] `GET /api/sync/pull` y `POST /api/sync/push`
-- [ ] Tabla `audit_logs` inmutable
-- [ ] OpenAPI / Swagger docs
-
-Criterios de aceptación:
-- Venta online resta stock en transacción ACID
-- Push offline procesa cola FIFO idempotente
-- Permisos bloquean acciones no autorizadas (403)
+- [x] Express + TypeScript en `apps/api/`
+- [x] Auth: login, JWT, `/api/auth/me`
+- [x] RBAC middleware (`requirePermission`)
+- [x] CRUD productos, categorías, usuarios
+- [x] Ventas con snapshot de precios + descuento de stock
+- [x] Caja: turnos y movimientos
+- [x] `GET /api/sync/pull` y `POST /api/sync/push`
+- [x] `audit_logs` en acciones críticas
+- [ ] Refresh token endpoint y logout
+- [ ] OpenAPI / Swagger
 
 ### Fase 3 — PWA POS (`feat/ux`)
 

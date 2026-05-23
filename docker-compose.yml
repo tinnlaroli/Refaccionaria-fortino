@@ -16,17 +16,42 @@ services:
       timeout: 5s
       retries: 10
 
+  migrate:
+    build:
+      context: ./packages/db
+    container_name: refaccionaria-migrate
+    environment:
+      DATABASE_URL: postgresql://refaccionaria:refaccionaria_dev@postgres:5432/refaccionaria
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  seed:
+    build:
+      context: ./packages/db
+    container_name: refaccionaria-seed
+    environment:
+      DATABASE_URL: postgresql://refaccionaria:refaccionaria_dev@postgres:5432/refaccionaria
+    command: ["npm", "run", "seed"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
   api:
     build:
-      context: ./apps/api
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: refaccionaria-api
     restart: unless-stopped
     environment:
       PORT: "3000"
       DATABASE_URL: postgresql://refaccionaria:refaccionaria_dev@postgres:5432/refaccionaria
+      JWT_SECRET: refaccionaria-dev-secret-change-me
     depends_on:
-      postgres:
-        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
 
   pos:
     build:

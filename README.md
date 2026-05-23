@@ -2,7 +2,7 @@
 
 Sistema de **Punto de Venta (POS)** y **Gestión de Inventario** offline-first para una refaccionaria en Veracruz, México.
 
-> **Estado actual:** Fase 0 — monorepo con Docker unificado. Scaffolds mínimos en cada módulo; desarrollo funcional pendiente (Fase 1+).
+> **Estado actual:** Fase 1 (BD) y Fase 2 (API base) completadas en scaffold funcional. Pendiente: PWA offline (Fase 3) y landing (Fase 4).
 
 ## Levantar todo con un solo comando
 
@@ -29,8 +29,24 @@ Esto construye y levanta **todos** los servicios:
 | http://localhost:8080/ | Landing (feat/landing) |
 | http://localhost:8080/pos/ | POS scaffold (feat/ux) |
 | http://localhost:8080/api/info | Info de la API |
-| http://localhost:8080/api/status | Estado API + conexión BD |
-| http://localhost:8080/health | Health check API |
+| http://localhost:8080/api/auth/login | POST — login (ver credenciales abajo) |
+| http://localhost:8080/api/products | GET — catálogo (requiere token) |
+
+### Credenciales de prueba (seed)
+
+| Usuario | Contraseña | Rol |
+|---------|------------|-----|
+| `admin@fortino.local` | `admin123` | Administrador |
+| `cajero@fortino.local` | `cajero123` | Cajero |
+
+### Scripts de base de datos
+
+```bash
+npm run db:migrate   # migraciones Drizzle (local, requiere postgres)
+npm run db:seed      # datos de prueba
+```
+
+Con Docker, migrate y seed corren automáticamente al hacer `npm run docker:up`.
 
 ```bash
 npm run docker:logs    # ver logs

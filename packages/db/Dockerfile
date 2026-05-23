@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:22-slim
 
 WORKDIR /app
 
@@ -9,4 +9,4 @@ COPY drizzle.config.ts tsconfig.json ./
 COPY src ./src
 COPY migrations ./migrations
 
-CMD ["npx", "tsx", "src/migrate.ts"]
+CMD ["npm", "run", "migrate"]
