@@ -27,3 +27,5 @@ Thumbs.db
 docker-compose.override.yml
 
 worktrees/
+.split-modules/
+agents-stash/

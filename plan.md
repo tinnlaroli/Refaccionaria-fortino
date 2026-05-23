@@ -21,7 +21,7 @@ Desarrollar un sistema POS + inventario **escalable** y **offline-first** para u
 
 | Decisión | Elección | Justificación |
 |----------|----------|---------------|
-| Backend | **Node.js + Express + TypeScript** | Ecosistema unificado con frontend; tipado compartido |
+| Backend | **Node.js + Express (JavaScript)** | Ecosistema unificado con frontend React |
 | ORM | **Drizzle** | Type-safe, migraciones ligeras, buen fit con PostgreSQL |
 | Offline | **IndexedDB + Dexie.js** | API Promise-based, índices para búsqueda por SKU |
 | Sync | **Pull/Push REST** | Simplicidad; cola FIFO en cliente |
@@ -33,28 +33,7 @@ Desarrollar un sistema POS + inventario **escalable** y **offline-first** para u
 
 ## 3. Módulos y mapeo a ramas
 
-```mermaid
-flowchart TB
-    subgraph branches [Ramas feat]
-        bd[feat/bd]
-        api[feat/api]
-        ux[feat/ux]
-        landing[feat/landing]
-    end
-    subgraph packages [Monorepo]
-        dbPkg[packages/db]
-        apiApp[apps/api]
-        posApp[apps/pos]
-        landApp[apps/landing]
-    end
-    bd --> dbPkg
-    api --> apiApp
-    ux --> posApp
-    landing --> landApp
-    dbPkg --> apiApp
-    apiApp --> posApp
-    apiApp --> landApp
-```
+Cada rama contiene **un solo módulo en la raíz** del repositorio. `main` solo tiene documentación.
 
 | Módulo | Rama | Entregables principales |
 |--------|------|-------------------------|
@@ -62,6 +41,8 @@ flowchart TB
 | API backend | `feat/api` | Auth, RBAC, sync, ventas, caja, auditoría |
 | PWA POS | `feat/ux` | Dexie, SW, UI mostrador/inventario/caja |
 | Landing | `feat/landing` | Sitio público / marketing |
+
+Integración (monorepo + Docker en `main`) — **pendiente**, al cerrar cada módulo.
 
 ---
 
@@ -72,11 +53,9 @@ flowchart TB
 - [x] Repositorio clonado y conectado a GitHub
 - [x] README, plan.md, agent skills (`.agents/skills/`)
 - [x] Ramas `feat/*` creadas
-- [x] Monorepo: `apps/api`, `apps/pos`, `apps/landing`, `packages/db`
-- [x] Docker Compose unificado en raíz (`main`) — `npm run docker:up`
-- [x] Gateway nginx en **http://localhost:8080** (landing + POS + API)
-- [x] Scaffolds mínimos ejecutables en cada módulo
-- [x] Scripts: `checkout-module.ps1`, `setup-worktrees.ps1`, `sync-branches.ps1`
+- [x] Ramas `feat/*` por módulo
+- [x] Scripts: `checkout-module.ps1`
+- [ ] Integración monorepo + Docker (fase final en `main`)
 
 ### Fase 1 — Base de datos (`feat/bd`) — completada
 
@@ -88,7 +67,7 @@ flowchart TB
 
 ### Fase 2 — API backend (`feat/api`) — en progreso
 
-- [x] Express + TypeScript en `apps/api/`
+- [x] Express (JavaScript) en `apps/api/`
 - [x] Auth: login, JWT, `/api/auth/me`
 - [x] RBAC middleware (`requirePermission`)
 - [x] CRUD productos, categorías, usuarios
