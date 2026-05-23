@@ -1,4 +1,4 @@
-# Base de datos — Refaccionaria Fortino
+﻿# Base de datos — Refaccionaria Fortino
 
 **Rama:** `feat/bd`
 
@@ -6,12 +6,18 @@ PostgreSQL + Drizzle: esquema, migraciones, seeds.
 
 ## Setup
 
-```bash
+``bash
 git checkout feat/bd
+cp .env.example .env
 npm install
 npm run build
 npm run migrate
 npm run seed
-```
+``
 
-Variable: `DATABASE_URL` (PostgreSQL).
+Variable requerida: `DATABASE_URL` (PostgreSQL).
+
+## Credenciales seed
+
+- Admin: `admin@fortino.local` / `admin123`
+- Cajero: `cajero@fortino.local` / `cajero123`
