@@ -46,6 +46,8 @@ const pushSchema = z.object({
       clientUuid: z.string().uuid(),
       shiftId: z.string().uuid().optional().nullable(),
       soldAt: z.string().datetime(),
+      paymentMethod: z.enum(["cash", "card", "transfer"]).optional(),
+      amountReceived: z.union([z.string(), z.number()]).optional(),
       items: z.array(
         z.object({
           productId: z.string().uuid().optional(),
@@ -90,6 +92,8 @@ router.post("/push", requireAuth, async (req, res) => {
         cashierId: req.user.sub,
         shiftId: tx.shiftId,
         soldAt: new Date(tx.soldAt),
+        paymentMethod: tx.paymentMethod,
+        amountReceived: tx.amountReceived,
         items: tx.items,
       });
 

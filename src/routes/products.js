@@ -1,5 +1,5 @@
 import { products } from "@refaccionaria/db";
-import { desc, eq, ilike, or } from "drizzle-orm";
+import { desc, eq, ilike, or, and, sql } from "drizzle-orm";
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db.js";
@@ -20,9 +20,22 @@ const productSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-router.get("/", requireAuth, async (req, res) => {
+router.get("/", requireAuth, requirePermission("products.view"), async (req, res) => {
   const q = typeof req.query.q === "string" ? req.query.q : "";
-  const list = q
+  const lowStock = req.query.lowStock === "1" || req.query.lowStock === "true";
+  const list = lowStock
+    ? await db
+        .select()
+        .from(products)
+        .where(
+          and(
+            eq(products.isActive, true),
+            sql`${products.stock} <= ${products.minStock}`,
+          ),
+        )
+        .orderBy(products.stock)
+        .limit(100)
+    : q
     ? await db
         .select()
         .from(products)
@@ -46,7 +59,7 @@ router.get("/", requireAuth, async (req, res) => {
   res.json(mapped);
 });
 
-router.get("/sku/:sku", requireAuth, async (req, res) => {
+router.get("/sku/:sku", requireAuth, requirePermission("products.view"), async (req, res) => {
   const [product] = await db
     .select()
     .from(products)
@@ -143,6 +156,64 @@ router.patch(
       entityType: "product",
       entityId: updated.id,
       payload: parsed.data,
+    });
+
+    res.json(updated);
+  },
+);
+
+router.post(
+  "/:id/adjust-stock",
+  requireAuth,
+  requirePermission("products.edit"),
+  async (req, res) => {
+    const adjustSchema = z.object({
+      delta: z.number().int().refine((n) => n !== 0, "Sin cambio de stock"),
+      reason: z.enum(["entrada", "merma", "devolucion", "conteo", "otro"]),
+      note: z.string().max(500).optional(),
+    });
+    const parsed = adjustSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.flatten() });
+      return;
+    }
+
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, String(req.params.id)))
+      .limit(1);
+
+    if (!product) {
+      res.status(404).json({ error: "Producto no encontrado" });
+      return;
+    }
+
+    const newStock = product.stock + parsed.data.delta;
+    if (newStock < 0) {
+      res.status(409).json({ error: "Stock insuficiente para esta salida" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(products)
+      .set({ stock: newStock, updatedAt: new Date() })
+      .where(eq(products.id, product.id))
+      .returning();
+
+    await logAudit({
+      userId: req.user.sub,
+      action: "product.stock_adjust",
+      entityType: "product",
+      entityId: product.id,
+      payload: {
+        sku: product.sku,
+        previousStock: product.stock,
+        newStock,
+        delta: parsed.data.delta,
+        reason: parsed.data.reason,
+        note: parsed.data.note,
+      },
     });
 
     res.json(updated);

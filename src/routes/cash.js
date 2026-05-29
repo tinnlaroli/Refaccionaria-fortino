@@ -1,5 +1,5 @@
-import { cashMovements, cashShifts, sales } from "@refaccionaria/db";
-import { and, eq, sql } from "drizzle-orm";
+import { cashMovements, cashShifts, sales, users } from "@refaccionaria/db";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db.js";
@@ -60,6 +60,64 @@ router.get("/shifts/current", requireAuth, async (req, res) => {
   res.json(shift ?? null);
 });
 
+router.get(
+  "/shifts/:id/summary",
+  requireAuth,
+  requirePermission("cash.register_movement"),
+  async (req, res) => {
+    const [shift] = await db
+      .select()
+      .from(cashShifts)
+      .where(eq(cashShifts.id, String(req.params.id)))
+      .limit(1);
+
+    if (!shift) {
+      res.status(404).json({ error: "Turno no encontrado" });
+      return;
+    }
+
+    const [{ salesTotal, salesCount }] = await db
+      .select({
+        salesTotal: sql`COALESCE(SUM(CASE WHEN ${sales.status} = 'completed' THEN ${sales.total} ELSE 0 END), 0)`,
+        salesCount: sql`COUNT(*) FILTER (WHERE ${sales.status} = 'completed')`,
+      })
+      .from(sales)
+      .where(eq(sales.shiftId, shift.id));
+
+    const movements = await db
+      .select({
+        id: cashMovements.id,
+        type: cashMovements.type,
+        amount: cashMovements.amount,
+        note: cashMovements.note,
+        createdAt: cashMovements.createdAt,
+        createdByName: users.fullName,
+      })
+      .from(cashMovements)
+      .leftJoin(users, eq(cashMovements.createdBy, users.id))
+      .where(eq(cashMovements.shiftId, shift.id))
+      .orderBy(desc(cashMovements.createdAt));
+
+    let movementNet = 0;
+    for (const m of movements) {
+      const amount = Number(m.amount);
+      movementNet += m.type === "income" ? amount : -amount;
+    }
+
+    const expectedCash =
+      Number(shift.openingCash) + Number(salesTotal ?? 0) + movementNet;
+
+    res.json({
+      shift,
+      salesTotal: Number(salesTotal ?? 0),
+      salesCount: Number(salesCount ?? 0),
+      movementNet,
+      expectedCash,
+      movements,
+    });
+  },
+);
+
 router.post(
   "/shifts/:id/close",
   requireAuth,
@@ -87,7 +145,7 @@ router.post(
 
     const [{ salesTotal }] = await db
       .select({
-        salesTotal: sql`COALESCE(SUM(${sales.total}), 0)`,
+        salesTotal: sql`COALESCE(SUM(CASE WHEN ${sales.status} = 'completed' THEN ${sales.total} ELSE 0 END), 0)`,
       })
       .from(sales)
       .where(eq(sales.shiftId, shift.id));

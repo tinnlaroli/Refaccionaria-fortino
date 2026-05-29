@@ -29,6 +29,17 @@ export const saleSyncStatusEnum = pgEnum("sale_sync_status", [
   "conflict",
 ]);
 
+export const paymentMethodEnum = pgEnum("payment_method", [
+  "cash",
+  "card",
+  "transfer",
+]);
+
+export const saleStatusEnum = pgEnum("sale_status", [
+  "completed",
+  "cancelled",
+]);
+
 export const roles = pgTable("roles", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
@@ -184,6 +195,13 @@ export const sales = pgTable(
       onDelete: "set null",
     }),
     total: numeric("total", { precision: 12, scale: 2 }).notNull(),
+    paymentMethod: paymentMethodEnum("payment_method").notNull().default("cash"),
+    amountReceived: numeric("amount_received", { precision: 12, scale: 2 }),
+    status: saleStatusEnum("status").notNull().default("completed"),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    cancelledBy: uuid("cancelled_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     soldAt: timestamp("sold_at", { withTimezone: true }).notNull(),
     syncStatus: saleSyncStatusEnum("sync_status").notNull().default("synced"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -194,6 +212,7 @@ export const sales = pgTable(
     uniqueIndex("sales_client_uuid_idx").on(table.clientUuid),
     index("sales_sold_at_idx").on(table.soldAt),
     index("sales_cashier_idx").on(table.cashierId),
+    index("sales_status_idx").on(table.status),
   ],
 );
 
@@ -297,4 +316,12 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
     references: [cashShifts.id],
   }),
   items: many(saleItems),
+}));
+
+export const saleItemsRelations = relations(saleItems, ({ one }) => ({
+  sale: one(sales, { fields: [saleItems.saleId], references: [sales.id] }),
+  product: one(products, {
+    fields: [saleItems.productId],
+    references: [products.id],
+  }),
 }));

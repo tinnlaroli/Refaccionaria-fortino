@@ -28,3 +28,18 @@ export function requirePermission(...keys) {
     next();
   };
 }
+
+export function requireAnyPermission(...keys) {
+  return (req, res, next) => {
+    if (!req.user) {
+      res.status(401).json({ error: "No autenticado" });
+      return;
+    }
+    const hasAny = keys.some((k) => req.user.permissions.includes(k));
+    if (!hasAny) {
+      res.status(403).json({ error: "Permiso denegado", requiredAny: keys });
+      return;
+    }
+    next();
+  };
+}

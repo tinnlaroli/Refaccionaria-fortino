@@ -25,6 +25,9 @@ export async function createSaleWithItems(params) {
         cashierId: params.cashierId,
         shiftId: params.shiftId ?? null,
         total: String(total),
+        paymentMethod: params.paymentMethod ?? "cash",
+        amountReceived:
+          params.amountReceived != null ? String(params.amountReceived) : null,
         soldAt: params.soldAt,
         syncStatus: "synced",
       })

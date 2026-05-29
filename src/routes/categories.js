@@ -7,7 +7,7 @@ import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
 
-router.get("/", requireAuth, async (_req, res) => {
+router.get("/", requireAuth, requirePermission("products.view"), async (_req, res) => {
   const list = await db.select().from(categories);
   res.json(list);
 });

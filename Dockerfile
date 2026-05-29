@@ -1,24 +1,28 @@
-FROM node:22-slim AS builder
+﻿FROM node:22-slim AS builder
 
 WORKDIR /app
 
-COPY package.json ./
-COPY db/package.json ./db/
-COPY db ./db
+# API (package.json) + su código JS
+COPY api/package.json ./package.json
+COPY api/package-lock.json ./package-lock.json
+COPY api/src ./src
 
-RUN npm install --prefix db && npm run build --prefix db
+# Base de datos local que usa el backend (file:./db)
+COPY bd ./db
+
+# npm install ejecuta postinstall (build:db)
+RUN npm install
 
 FROM node:22-slim
 
 WORKDIR /app
 
-COPY package.json ./
-COPY db/package.json ./db/
-COPY --from=builder /app/db/dist ./db/dist
-COPY --from=builder /app/db/node_modules ./db/node_modules
-COPY src ./src
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/package-lock.json ./package-lock.json
+COPY --from=builder /app/node_modules ./node_modules
 
-RUN npm install --omit=dev
+COPY --from=builder /app/db ./db
+COPY --from=builder /app/src ./src
 
 ENV NODE_ENV=production
 EXPOSE 3000

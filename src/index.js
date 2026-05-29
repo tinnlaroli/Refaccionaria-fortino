@@ -11,6 +11,9 @@ import salesRoutes from "./routes/sales.js";
 import syncRoutes from "./routes/sync.js";
 import publicRoutes from "./routes/public.js";
 import usersRoutes from "./routes/users.js";
+import dashboardRoutes from "./routes/dashboard.js";
+import rolesRoutes from "./routes/roles.js";
+import auditRoutes from "./routes/audit.js";
 
 const app = express();
 
@@ -51,11 +54,15 @@ app.get("/api/info", (_req, res) => {
       sync: "/api/sync",
       users: "/api/users",
       public: "/api/public",
+      dashboard: "/api/dashboard",
+      roles: "/api/roles",
+      audit: "/api/audit",
     },
   });
 });
 
 app.use("/api/public", publicRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/categories", categoriesRoutes);
@@ -63,6 +70,8 @@ app.use("/api/sales", salesRoutes);
 app.use("/api/cash", cashRoutes);
 app.use("/api/sync", syncRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/roles", rolesRoutes);
+app.use("/api/audit", auditRoutes);
 
 app.listen(config.port, "0.0.0.0", () => {
   console.log(`[api] listening on http://0.0.0.0:${config.port}`);
