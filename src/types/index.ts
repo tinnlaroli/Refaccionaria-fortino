@@ -25,6 +25,7 @@ export type CartLine = {
   productName: string;
   unitPrice: number;
   quantity: number;
+  maxStock?: number;
 };
 
 export type CashShift = {

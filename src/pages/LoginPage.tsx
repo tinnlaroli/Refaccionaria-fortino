@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getCachedSession } from "../api/auth.js";
 import { useAuth } from "../context/AuthContext.js";
 import { useTheme } from "../hooks/useTheme.js";
 import { ThemeToggle } from "../components/ThemeToggle.js";
+
+function canAccessAdminPanel(permissions: string[]) {
+  return permissions.some((p) =>
+    ["products.view", "products.create", "products.edit", "users.manage", "sales.view_all"].includes(p),
+  );
+}
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -19,7 +26,9 @@ export function LoginPage() {
     setError(null);
     try {
       await login(email, password);
-      navigate("/", { replace: true });
+      const cached = await getCachedSession();
+      const goAdmin = cached ? canAccessAdminPanel(cached.user.permissions) : false;
+      navigate(goAdmin ? "/app" : "/", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesión");
     } finally {
@@ -62,7 +71,7 @@ export function LoginPage() {
           </button>
         </form>
         <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "1.5rem" }}>
-          Demo: cajero@fortino.local / cajero123
+          Admin: admin@fortino.local / admin123 · Cajero: cajero@fortino.local / cajero123
         </p>
       </div>
     </div>

@@ -13,8 +13,8 @@ type CartContextValue = {
   subtotal: number;
   total: number;
   itemCount: number;
-  addProduct: (product: Product, qty?: number) => void;
-  updateQty: (sku: string, quantity: number) => void;
+  addProduct: (product: Product, qty?: number) => string | null;
+  updateQty: (sku: string, quantity: number, maxStock?: number) => string | null;
   removeLine: (sku: string) => void;
   clear: () => void;
 };
@@ -24,13 +24,23 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
 
-  const addProduct = useCallback((product: Product, qty = 1) => {
+  const addProduct = useCallback((product: Product, qty = 1): string | null => {
+    if (!product.isActive) return "Producto inactivo";
+    if (product.stock <= 0) return "Sin stock disponible";
+
+    let error: string | null = null;
     const price = Number(product.salePrice);
     setLines((prev) => {
       const idx = prev.findIndex((l) => l.sku === product.sku);
+      const currentQty = idx >= 0 ? prev[idx].quantity : 0;
+      const nextQty = currentQty + qty;
+      if (nextQty > product.stock) {
+        error = `Stock insuficiente (máx. ${product.stock})`;
+        return prev;
+      }
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = { ...next[idx], quantity: next[idx].quantity + qty };
+        next[idx] = { ...next[idx], quantity: nextQty };
         return next;
       }
       return [
@@ -41,19 +51,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
           productName: product.name,
           unitPrice: price,
           quantity: qty,
+          maxStock: product.stock,
         },
       ];
     });
+    return error;
   }, []);
 
-  const updateQty = useCallback((sku: string, quantity: number) => {
+  const updateQty = useCallback((sku: string, quantity: number, maxStock?: number): string | null => {
     if (quantity <= 0) {
       setLines((prev) => prev.filter((l) => l.sku !== sku));
-      return;
+      return null;
     }
-    setLines((prev) =>
-      prev.map((l) => (l.sku === sku ? { ...l, quantity } : l)),
-    );
+    let error: string | null = null;
+    setLines((prev) => {
+      const line = prev.find((l) => l.sku === sku);
+      const limit = maxStock ?? line?.maxStock;
+      if (limit !== undefined && quantity > limit) {
+        error = `Stock insuficiente (máx. ${limit})`;
+        return prev;
+      }
+      return prev.map((l) =>
+        l.sku === sku ? { ...l, quantity, maxStock: limit ?? l.maxStock } : l,
+      );
+    });
+    return error;
   }, []);
 
   const removeLine = useCallback((sku: string) => {

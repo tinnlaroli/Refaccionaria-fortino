@@ -1,10 +1,12 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.js";
+import { usePermissions } from "../hooks/usePermissions.js";
 import { ConnectionBanner } from "./ConnectionBanner.js";
 import { ThemeToggle } from "./ThemeToggle.js";
 
 export function Layout() {
   const { user, logout } = useAuth();
+  const { canAccessAdmin } = usePermissions();
 
   return (
     <div className="app-shell">
@@ -19,6 +21,7 @@ export function Layout() {
           </NavLink>
           <NavLink to="/inventario">Inventario</NavLink>
           <NavLink to="/caja">Caja</NavLink>
+          {canAccessAdmin && <NavLink to="/app">Panel</NavLink>}
         </nav>
         <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginLeft: "0.5rem" }}>
           {user?.fullName}

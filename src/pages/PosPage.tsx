@@ -1,17 +1,28 @@
 import { useState } from "react";
 import { useCart } from "../context/CartContext.js";
+import { useToast } from "../context/ToastContext.js";
 import { ProductSearch } from "../components/ProductSearch.js";
 import { CheckoutModal } from "../components/CheckoutModal.js";
 
 export function PosPage() {
   const { lines, subtotal, total, itemCount, addProduct, updateQty, removeLine, clear } =
     useCart();
+  const { success, error: toastError } = useToast();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const handleAdd = (product: Parameters<typeof addProduct>[0]) => {
+    const err = addProduct(product);
+    if (err) toastError(err);
+  };
+
+  const handleQty = (sku: string, quantity: number, maxStock?: number) => {
+    const err = updateQty(sku, quantity, maxStock);
+    if (err) toastError(err);
+  };
 
   return (
     <div className="pos-layout">
       <section className="panel">
-        <ProductSearch onSelect={(p) => addProduct(p)} />
+        <ProductSearch onSelect={handleAdd} />
         <ul className="cart-lines">
           {lines.length === 0 && (
             <li style={{ color: "var(--text-muted)", padding: "2rem 0" }}>
@@ -27,7 +38,7 @@ export function PosPage() {
               <div className="qty-control">
                 <button
                   type="button"
-                  onClick={() => updateQty(line.sku, line.quantity - 1)}
+                  onClick={() => handleQty(line.sku, line.quantity - 1)}
                   aria-label="Menos"
                 >
                   −
@@ -35,7 +46,7 @@ export function PosPage() {
                 <span className="mono">{line.quantity}</span>
                 <button
                   type="button"
-                  onClick={() => updateQty(line.sku, line.quantity + 1)}
+                  onClick={() => handleQty(line.sku, line.quantity + 1, line.maxStock)}
                   aria-label="Más"
                 >
                   +
@@ -91,8 +102,7 @@ export function PosPage() {
       <CheckoutModal
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
-        onSuccess={() => {}}
-      />
-    </div>
+        onSuccess={() => success("Venta registrada")}
+      />    </div>
   );
 }

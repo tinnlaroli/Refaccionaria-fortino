@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { searchProductsLocal, findBySku } from "../api/products.js";
+import { StockBadge } from "./StockBadge.js";
+import { useToast } from "../context/ToastContext.js";
 import type { Product } from "../types/index.js";
 
 type Props = {
@@ -8,6 +10,7 @@ type Props = {
 
 export function ProductSearch({ onSelect }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const { error: toastError } = useToast();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
 
@@ -25,24 +28,37 @@ export function ProductSearch({ onSelect }: Props) {
     return () => clearTimeout(t);
   }, [query, search]);
 
+  const trySelect = (product: Product) => {
+    if (!product.isActive) {
+      toastError("Producto inactivo en catálogo");
+      return;
+    }
+    if (product.stock <= 0) {
+      toastError(`${product.sku} sin stock disponible`);
+      return;
+    }
+    onSelect(product);
+    setQuery("");
+    setResults([]);
+    inputRef.current?.focus();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = query.trim();
     if (!trimmed) return;
 
     const product = await findBySku(trimmed);
-    if (product && product.isActive) {
-      onSelect(product);
-      setQuery("");
-      setResults([]);
-      inputRef.current?.focus();
+    if (product) {
+      trySelect(product);
       return;
     }
 
-    if (results.length === 1) {
-      onSelect(results[0]);
-      setQuery("");
-      setResults([]);
+    const available = results.filter((p) => p.isActive && p.stock > 0);
+    if (available.length === 1) {
+      trySelect(available[0]);
+    } else if (results.length > 0 && available.length === 0) {
+      toastError("Ningún resultado tiene stock disponible");
     }
   };
 
@@ -67,37 +83,33 @@ export function ProductSearch({ onSelect }: Props) {
             listStyle: "none",
             margin: 0,
             padding: 0,
-            maxHeight: 200,
+            maxHeight: 240,
             overflow: "auto",
             border: "1px solid var(--border)",
             borderRadius: 8,
           }}
         >
-          {results.slice(0, 8).map((p) => (
-            <li key={p.id}>
-              <button
-                type="button"
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "0.6rem 0.75rem",
-                  background: "transparent",
-                  border: "none",
-                  borderBottom: "1px solid var(--border)",
-                  color: "var(--text-primary)",
-                }}
-                onClick={() => {
-                  onSelect(p);
-                  setQuery("");
-                  setResults([]);
-                  inputRef.current?.focus();
-                }}
-              >
-                <span className="sku">{p.sku}</span> — {p.name}{" "}
-                <span className="price">${Number(p.salePrice).toFixed(2)}</span>
-              </button>
-            </li>
-          ))}
+          {results.slice(0, 8).map((p) => {
+            const unavailable = !p.isActive || p.stock <= 0;
+            return (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  className="search-result-item"
+                  disabled={unavailable}
+                  onClick={() => trySelect(p)}
+                >
+                  <span>
+                    <span className="sku">{p.sku}</span> — {p.name}
+                  </span>
+                  <span className="search-result-meta">
+                    <StockBadge stock={p.stock} minStock={p.minStock} />
+                    <span className="price">${Number(p.salePrice).toFixed(2)}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

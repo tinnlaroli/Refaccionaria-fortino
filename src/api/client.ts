@@ -28,7 +28,22 @@ export async function apiFetch<T>(
   }
 
   const text = await response.text();
-  const data = text ? (JSON.parse(text) as T) : ({} as T);
+  const trimmed = text.trim();
+  let data: T;
+  if (!trimmed) {
+    data = {} as T;
+  } else {
+    try {
+      data = JSON.parse(trimmed) as T;
+    } catch {
+      const contentType = response.headers.get("content-type") ?? "unknown";
+      const snippet = trimmed.slice(0, 200);
+      throw new ApiError(
+        `Respuesta inválida del servidor (no JSON). status=${response.status}, content-type=${contentType}, body="${snippet}"`,
+        response.status,
+      );
+    }
+  }
 
   if (!response.ok) {
     const err = data as { error?: string };

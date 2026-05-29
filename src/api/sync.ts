@@ -69,6 +69,8 @@ export async function pushPendingSales(token: string) {
         clientUuid: tx.clientUuid,
         shiftId: tx.shiftId,
         soldAt: tx.soldAt,
+        paymentMethod: tx.paymentMethod,
+        amountReceived: tx.amountReceived,
         items: tx.items.map((i) => ({
           productId: i.productId,
           sku: i.sku,

@@ -1,25 +1,29 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext.js";
+import { useToast } from "../context/ToastContext.js";
 import {
   closeShift,
   getCachedShift,
   getCurrentShift,
+  getShiftSummary,
   openShift,
   registerMovement,
+  type ShiftSummary,
 } from "../api/cash.js";
 import type { CashShift } from "../types/index.js";
 import { useOnline } from "../hooks/useOnline.js";
 
 export function CashPage() {
   const { token } = useAuth();
+  const { success, error: toastError } = useToast();
   const online = useOnline();
   const [shift, setShift] = useState<CashShift | null>(null);
+  const [summary, setSummary] = useState<ShiftSummary | null>(null);
   const [openingCash, setOpeningCash] = useState("0");
   const [closingCash, setClosingCash] = useState("");
   const [movementAmount, setMovementAmount] = useState("");
   const [movementType, setMovementType] = useState<"income" | "expense">("expense");
   const [movementNote, setMovementNote] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadShift = async () => {
@@ -27,6 +31,15 @@ export function CashPage() {
     if (cached && online && token) {
       const current = await getCurrentShift(token);
       setShift(current);
+      if (current) {
+        try {
+          setSummary(await getShiftSummary(token, current.id));
+        } catch {
+          setSummary(null);
+        }
+      } else {
+        setSummary(null);
+      }
     } else if (cached) {
       setShift({
         id: cached.shiftId,
@@ -35,14 +48,19 @@ export function CashPage() {
         openingCash: cached.openingCash,
         status: "open",
       });
+      setSummary(null);
     } else {
       setShift(null);
+      setSummary(null);
     }
   };
 
   useEffect(() => {
     loadShift();
-  }, [token, online]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!shift || !online || !token) return;
+    const interval = setInterval(loadShift, 15000);
+    return () => clearInterval(interval);
+  }, [token, online, shift?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOpen = async () => {
     if (!token || !online) {
@@ -53,7 +71,8 @@ export function CashPage() {
     try {
       const s = await openShift(token, Number(openingCash));
       setShift(s);
-      setMessage("Turno abierto");
+      success("Turno abierto");
+      await loadShift();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
     }
@@ -65,7 +84,8 @@ export function CashPage() {
     try {
       const result = await closeShift(token, shift.id, Number(closingCash));
       setShift(null);
-      setMessage(
+      setSummary(null);
+      success(
         `Turno cerrado. Diferencia: $${result.difference?.toFixed(2) ?? "0.00"}`,
       );
     } catch (e) {
@@ -85,16 +105,16 @@ export function CashPage() {
       });
       setMovementAmount("");
       setMovementNote("");
-      setMessage("Movimiento registrado");
+      success("Movimiento registrado");
+      await loadShift();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error");
+      toastError(e instanceof Error ? e.message : "Error");
     }
   };
 
   return (
     <div className="panel" style={{ height: "100%" }}>
       <h2 style={{ marginTop: 0 }}>Caja</h2>
-      {message && <p style={{ color: "var(--success)" }}>{message}</p>}
       {error && <p className="error-text">{error}</p>}
 
       {!shift ? (
@@ -117,9 +137,25 @@ export function CashPage() {
       ) : (
         <div className="cash-grid">
           <div className="cash-card">
-            <h3>Turno activo</h3>
-            <p className="mono">ID: {shift.id.slice(0, 8)}…</p>
+            <h3>Resumen del turno</h3>
             <p>Apertura: ${Number(shift.openingCash).toFixed(2)}</p>
+            {summary ? (
+              <>
+                <p>Ventas: {summary.salesCount} · ${summary.salesTotal.toFixed(2)}</p>
+                <p>
+                  Movimientos netos:{" "}
+                  {summary.movementNet >= 0 ? "+" : ""}
+                  ${summary.movementNet.toFixed(2)}
+                </p>
+                <p className="checkout-total price" style={{ fontSize: "1.25rem" }}>
+                  Efectivo esperado: ${summary.expectedCash.toFixed(2)}
+                </p>
+              </>
+            ) : (
+              <p style={{ color: "var(--text-muted)" }}>
+                {online ? "Calculando resumen..." : "Sin conexión para resumen en vivo"}
+              </p>
+            )}
           </div>
 
           <div className="cash-card">
@@ -163,6 +199,14 @@ export function CashPage() {
               value={closingCash}
               onChange={(e) => setClosingCash(e.target.value)}
             />
+            {summary && closingCash && (
+              <p className="change-hint" style={{ marginTop: "0.5rem" }}>
+                Diferencia estimada:{" "}
+                <strong>
+                  ${(Number(closingCash) - summary.expectedCash).toFixed(2)}
+                </strong>
+              </p>
+            )}
             <button
               type="button"
               className="btn-danger"
@@ -172,6 +216,32 @@ export function CashPage() {
               Cerrar turno
             </button>
           </div>
+
+          {summary && summary.movements.length > 0 && (
+            <div className="cash-card cash-card-wide">
+              <h3>Movimientos del turno</h3>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Hora</th>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Nota</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.movements.map((m) => (
+                    <tr key={m.id}>
+                      <td>{new Date(m.createdAt).toLocaleTimeString("es-MX")}</td>
+                      <td>{m.type === "income" ? "Ingreso" : "Egreso"}</td>
+                      <td className="price">${Number(m.amount).toFixed(2)}</td>
+                      <td>{m.note ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

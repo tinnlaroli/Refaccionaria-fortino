@@ -16,6 +16,8 @@ export type TransactionQueueRow = {
   clientUuid: string;
   shiftId?: string | null;
   soldAt: string;
+  paymentMethod?: "cash" | "card" | "transfer";
+  amountReceived?: number;
   items: QueuedSaleItem[];
   status: "pending" | "synced" | "error";
   error?: string;

@@ -66,3 +66,23 @@ export async function registerMovement(
     body: JSON.stringify(params),
   });
 }
+
+export type ShiftSummary = {
+  shift: CashShift;
+  salesTotal: number;
+  salesCount: number;
+  movementNet: number;
+  expectedCash: number;
+  movements: Array<{
+    id: string;
+    type: "income" | "expense";
+    amount: string;
+    note: string | null;
+    createdAt: string;
+    createdByName: string | null;
+  }>;
+};
+
+export async function getShiftSummary(token: string, shiftId: string) {
+  return apiFetch<ShiftSummary>(`/api/cash/shifts/${shiftId}/summary`, { token });
+}
