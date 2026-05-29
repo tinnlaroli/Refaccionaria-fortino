@@ -1,0 +1,21 @@
+{
+  "name": "@refaccionaria/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "build:db": "npm run build --prefix db",
+    "postinstall": "npm run build:db"
+  },
+  "dependencies": {
+    "@refaccionaria/db": "file:./db",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "drizzle-orm": "^0.44.2",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^3.25.67"
+  }
+}
