@@ -1,21 +1,39 @@
-import type { ReactNode } from "react";
+import { Stack } from "@carbon/react";
 
 type Props = {
   title: string;
   description?: string;
   step?: string;
-  actions?: ReactNode;
+  actions?: React.ReactNode;
 };
 
 export function PageHeader({ title, description, step, actions }: Props) {
   return (
-    <header className="page-header">
-      <div className="page-header-text">
-        {step && <span className="page-step">{step}</span>}
-        <h2>{title}</h2>
-        {description && <p>{description}</p>}
-      </div>
-      {actions && <div className="page-header-actions">{actions}</div>}
+    <header
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: "1rem",
+        marginBottom: "1rem",
+      }}
+    >
+      <Stack gap={2}>
+        {step && (
+          <span className="cds--label" style={{ color: "var(--cds-link-primary)" }}>
+            {step}
+          </span>
+        )}
+        <h2 className="cds--productive-heading-03" style={{ margin: 0 }}>
+          {title}
+        </h2>
+        {description && (
+          <p className="cds--body-compact-01" style={{ margin: 0, color: "var(--cds-text-secondary)" }}>
+            {description}
+          </p>
+        )}
+      </Stack>
+      {actions && <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>{actions}</div>}
     </header>
   );
 }

@@ -1,0 +1,1899 @@
+@import "@carbon/styles/css/styles.css";
+@import "./fortino-tokens.scss";
+@import "./fortino-ui-global.scss";
+@import "./fortino-typography.scss";
+@import "./fortino-responsive.scss";
+
+/* IBM Plex — tipografía oficial Carbon, pesos completos para legibilidad */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+html {
+  height: 100%;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+}
+
+body {
+  min-height: 100%;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-feature-settings: "kern" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: var(--cds-background);
+  color: var(--cds-text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#root {
+  min-height: 100dvh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.fortino-app-root {
+  min-height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--cds-background);
+  color: var(--cds-text-primary);
+}
+
+.mono,
+.sku,
+.price {
+  font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ——— Shell POS ——— */
+.fortino-pos-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--cds-background);
+}
+
+.fortino-pos-header.cds--header {
+  position: fixed !important;
+  top: var(--fortino-safe-top);
+  left: 0;
+  right: 0;
+  z-index: 8100;
+  block-size: var(--fortino-pos-header-h) !important;
+  min-block-size: var(--fortino-pos-header-h) !important;
+  background-color: var(--fortino-header-bg) !important;
+  border-block-end: 1px solid var(--cds-border-subtle-02);
+  box-shadow: var(--fortino-shadow-sm);
+}
+
+.fortino-pos-header-spacer {
+  flex-shrink: 0;
+  block-size: var(--fortino-pos-top-offset);
+  inline-size: 100%;
+  pointer-events: none;
+}
+
+.fortino-pos-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fortino-pos-header .cds--header__nav a.cds--header__menu-item--current,
+.fortino-pos-header a.cds--header__menu-item[aria-current="page"] {
+  background: var(--fortino-accent-soft);
+  color: var(--cds-link-primary);
+  font-weight: 600;
+  border-bottom: 3px solid var(--cds-border-interactive);
+}
+
+.fortino-pos-user {
+  display: none;
+}
+
+.fortino-pos-shift-link {
+  text-decoration: none;
+  margin-right: 0.25rem;
+}
+
+.fortino-pos-shift-link:hover .cds--tag {
+  outline: 1px solid var(--cds-border-interactive);
+}
+
+.fortino-pos-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Layout mostrador */
+.fortino-pos-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 22rem);
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.fortino-pos-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  padding-block-start: 1.25rem;
+  overflow: auto;
+  scroll-padding-block-start: 0.5rem;
+  background: var(--cds-background);
+}
+
+.fortino-pos-search-form .cds--search-input {
+  font-size: 1.0625rem;
+}
+
+.fortino-pos-cart-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.fortino-pos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 2rem !important;
+  gap: 0.5rem;
+  border: 1px dashed var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
+}
+
+.fortino-pos-empty-icon {
+  color: var(--cds-icon-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.fortino-pos-kbd-hint {
+  color: var(--cds-text-helper);
+  margin: 0.5rem 0 0;
+}
+
+.fortino-pos-kbd-hint kbd {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.75rem;
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 4px;
+  background: var(--cds-layer-02);
+}
+
+/* Búsqueda */
+.fortino-pos-search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fortino-pos-search-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.fortino-pos-search-form .cds--search {
+  flex: 1;
+}
+
+.fortino-pos-search-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--cds-text-helper);
+}
+
+.fortino-search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: min(320px, 40vh);
+  overflow: auto;
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 4px;
+  background: var(--cds-layer-01);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 10%);
+}
+
+.fortino-search-result {
+  width: 100%;
+  text-align: left;
+  padding: 0.85rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  color: var(--cds-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.fortino-search-result:last-child {
+  border-bottom: none;
+}
+
+.fortino-search-result:hover:not(:disabled),
+.fortino-search-result--active {
+  background: var(--fortino-accent-soft);
+}
+
+.fortino-search-result--active {
+  box-shadow: inset 4px 0 0 var(--cds-border-interactive);
+}
+
+.fortino-search-result--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fortino-search-result-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.fortino-search-result-name {
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.fortino-search-result-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.fortino-search-result-price {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.fortino-search-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: var(--cds-text-secondary);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 4px;
+  background: var(--cds-layer-01);
+}
+
+/* Carrito */
+.fortino-cart-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fortino-cart-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  background: var(--cds-layer-01);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-left: 3px solid var(--cds-border-subtle-02);
+  border-radius: 6px;
+  box-shadow: var(--fortino-shadow-sm);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.fortino-cart-line:hover {
+  border-left-color: var(--cds-border-interactive);
+}
+
+.fortino-cart-line--flash {
+  animation: fortino-cart-flash 1.2s ease;
+}
+
+@keyframes fortino-cart-flash {
+  0% {
+    background: var(--cds-layer-selected-01);
+    box-shadow: 0 0 0 2px var(--cds-border-interactive);
+  }
+  100% {
+    background: var(--cds-layer-01);
+    box-shadow: none;
+  }
+}
+
+.fortino-cart-line-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.fortino-cart-line-sku {
+  font-size: 0.75rem;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-cart-line-name {
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.fortino-cart-line-unit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.fortino-cart-stock-tag {
+  margin-left: 0.25rem;
+}
+
+.fortino-cart-qty {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  background: var(--cds-layer-02);
+  border-radius: 6px;
+  padding: 0.15rem;
+}
+
+.fortino-cart-qty-value {
+  min-width: 2rem;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.fortino-cart-line-total {
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-width: 5rem;
+  text-align: right;
+}
+
+.fortino-cart-remove {
+  opacity: 0.65;
+}
+
+.fortino-cart-line:hover .fortino-cart-remove {
+  opacity: 1;
+}
+
+/* Panel cobro */
+.fortino-pos-checkout {
+  border-left: 1px solid var(--cds-border-subtle-02);
+  background: var(--cds-layer-01);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 16px rgb(0 0 0 / 4%);
+}
+
+.fortino-pos-checkout-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  height: 100%;
+}
+
+.fortino-pos-checkout-head h2 {
+  margin: 0;
+}
+
+.fortino-pos-checkout-head p {
+  margin: 0.25rem 0 0;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-pos-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--fortino-accent-soft);
+  border: 1px solid var(--fortino-info-border);
+  border-radius: 6px;
+}
+
+.fortino-pos-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.fortino-pos-subtotal {
+  font-size: 1.1rem;
+}
+
+.fortino-pos-total-row--grand {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--cds-border-subtle-01);
+  font-weight: 600;
+}
+
+.fortino-pos-grand-total {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--cds-link-primary);
+}
+
+.fortino-pos-pay-btn.cds--btn--primary {
+  max-width: none;
+  min-block-size: 3.25rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.fortino-pos-checkout-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fortino-pos-pay-btn {
+  max-width: none;
+  min-block-size: 3rem;
+  font-size: 1.05rem;
+}
+
+/* Checkout modal */
+.fortino-checkout-amount {
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.fortino-checkout-total {
+  margin: 0.25rem 0 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.fortino-cash-quick-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.fortino-checkout-change {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  background: var(--fortino-success-bg);
+  border: 1px solid var(--fortino-success-border);
+  border-radius: 6px;
+  font-size: 1.15rem;
+  color: var(--fortino-success-text);
+}
+
+.fortino-checkout-change strong {
+  font-size: 1.35rem;
+}
+
+/* Legacy POS classes (inventario, etc.) */
+.pos-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);
+  height: 100%;
+}
+
+.pos-panel {
+  padding: 1rem;
+  overflow: auto;
+  background: var(--cds-layer-01);
+}
+
+.pos-panel-checkout {
+  border-left: 1px solid var(--cds-border-subtle-01);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cart-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cart-line {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+}
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.checkout-total {
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.search-results-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
+}
+
+.search-result-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  color: var(--cds-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.search-result-item:hover:not(:disabled) {
+  background: var(--cds-layer-hover-01);
+}
+
+.search-result-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.search-result-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ——— Admin shell ——— */
+.fortino-page-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.fortino-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.fortino-toolbar-grow {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* ——— Tablas interactivas (click fila abre detalle; acciones solo al hover) ——— */
+.fortino-interactive-table {
+  position: relative;
+}
+
+.fortino-interactive-table .cds--table-header-label:empty {
+  padding: 0;
+  width: 0;
+}
+
+.fortino-interactive-table th.fortino-row-actions-cell,
+.fortino-interactive-table td.fortino-row-actions-cell {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  overflow: visible;
+  position: relative;
+}
+
+.fortino-interactive-row {
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.fortino-interactive-row--hover {
+  background: var(--fortino-accent-soft);
+}
+
+.fortino-interactive-row:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: -2px;
+}
+
+/* Oculto por defecto — solo visible con clase --visible (hover/focus en la fila) */
+.fortino-row-actions {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.15rem 0.25rem;
+  border-radius: 6px;
+  background: var(--cds-layer-01);
+  border: 1px solid var(--cds-border-subtle-01);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 14%);
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.fortino-row-actions--visible {
+  display: flex;
+}
+
+.fortino-row-actions .cds--btn--icon-only {
+  block-size: 2rem;
+  inline-size: 2rem;
+  min-block-size: 2rem;
+  min-inline-size: 2rem;
+}
+
+.fortino-cash-tile {
+  max-width: 480px;
+}
+
+.fortino-shift-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  background: var(--fortino-warning-bg);
+  border-block-end: 1px solid var(--fortino-warning-border);
+}
+
+.fortino-shift-banner .cds--inline-notification {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.fortino-cash-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-block: 1px solid var(--cds-border-subtle-01);
+}
+
+.fortino-cash-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.fortino-text-success {
+  color: var(--cds-support-success);
+  font-weight: 600;
+}
+
+.fortino-connection-strip--error {
+  background: var(--fortino-error-bg, rgb(255 235 235));
+  border-block-end-color: var(--fortino-error-border, rgb(218 30 40 / 35%));
+}
+
+/* ——— Caja ——— */
+.cash-grid {
+  display: grid;
+  gap: 1rem;
+  max-width: 960px;
+}
+
+.cash-grid-wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+  .fortino-pos-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    height: auto;
+  }
+
+  .fortino-pos-checkout {
+    border-left: none;
+    border-top: 1px solid var(--cds-border-subtle-02);
+  }
+
+  .fortino-pos-checkout-inner {
+    padding: 1rem;
+  }
+
+  .fortino-cart-line {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+  }
+
+  .fortino-cart-line-total {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .fortino-cart-qty {
+    grid-column: 1;
+  }
+
+  .fortino-cart-remove {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .pos-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .pos-panel-checkout {
+    border-left: none;
+    border-top: 1px solid var(--cds-border-subtle-01);
+  }
+}
+
+/* Toast stack sobre modales Carbon */
+.fortino-toast-stack {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: min(420px, calc(100vw - 2rem));
+}
+
+.fortino-toast-stack .cds--toast-notification {
+  max-width: 100%;
+  border: 1px solid var(--cds-border-subtle-02);
+  box-shadow: var(--fortino-shadow-md);
+}
+
+/* Login */
+.fortino-login-page {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--cds-background);
+}
+
+.fortino-login-tile {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--cds-border-subtle-02);
+  border-top: 4px solid var(--cds-border-interactive);
+  box-shadow: var(--fortino-shadow-md);
+}
+
+.fortino-login-subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-login-header {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.fortino-theme-hint {
+  font-size: 0.75rem;
+  color: var(--cds-text-secondary);
+  white-space: nowrap;
+}
+
+/* ——— Admin shell (sidebar propio, sin Carbon UIShell) ——— */
+.fortino-admin-shell {
+  --fortino-sidebar-width: 16rem;
+  min-height: 100vh;
+  background: var(--cds-background);
+  color: var(--cds-text-primary);
+}
+
+.fortino-admin-shell[data-sidebar-collapsed="true"] {
+  --fortino-sidebar-width: 3.5rem;
+}
+
+.fortino-admin-header.cds--header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000;
+  background-color: var(--fortino-header-bg) !important;
+  border-block-end: 1px solid var(--cds-border-subtle-02);
+  box-shadow: var(--fortino-shadow-sm);
+}
+
+.fortino-sidebar-backdrop {
+  position: fixed;
+  inset: 3rem 0 0;
+  z-index: 7999;
+  border: none;
+  background: rgb(0 0 0 / 45%);
+  cursor: pointer;
+}
+
+.fortino-sidebar {
+  position: fixed;
+  top: 3rem;
+  left: 0;
+  bottom: 0;
+  z-index: 8000;
+  width: var(--fortino-sidebar-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--fortino-sidebar-bg);
+  border-inline-end: 1px solid var(--cds-border-subtle-02);
+  box-shadow: var(--fortino-shadow-sm);
+  transition: width 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+}
+
+.fortino-sidebar--collapsed .fortino-nav-item__label,
+.fortino-sidebar--collapsed .fortino-nav-group__label,
+.fortino-sidebar--collapsed .fortino-sidebar__title,
+.fortino-sidebar--collapsed .fortino-theme-segment__label,
+.fortino-sidebar--collapsed .fortino-sidebar-account__meta,
+.fortino-sidebar--collapsed .fortino-sidebar-logout {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+}
+
+.fortino-sidebar--collapsed .fortino-sidebar__head {
+  justify-content: center;
+  padding-inline: 0.35rem;
+}
+
+.fortino-sidebar--collapsed .fortino-nav-item {
+  justify-content: center;
+  padding-inline: 0.65rem;
+}
+
+@media (max-width: 1055px) {
+  .fortino-sidebar {
+    transform: translateX(-100%);
+    width: min(18rem, 88vw);
+  }
+
+  .fortino-admin-shell[data-mobile-nav-open="true"] .fortino-sidebar {
+    transform: translateX(0);
+  }
+}
+
+.fortino-sidebar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  flex-shrink: 0;
+  min-height: 2.75rem;
+}
+
+.fortino-sidebar__toggle {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.fortino-sidebar__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0.35rem;
+}
+
+.fortino-sidebar__foot {
+  padding: 0.85rem;
+  border-top: 1px solid var(--cds-border-subtle-02);
+  background: var(--cds-layer-02);
+  flex-shrink: 0;
+}
+
+.fortino-sidebar--collapsed .fortino-sidebar__foot {
+  padding: 0.5rem 0.35rem;
+}
+
+.fortino-nav-group {
+  margin-bottom: 0.35rem;
+}
+
+.fortino-nav-group__label {
+  margin: 0.65rem 0.75rem 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+  transition: opacity 0.15s ease;
+}
+
+.fortino-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.125rem 0;
+  padding: 0.625rem 0.75rem;
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--cds-text-primary);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.35;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.fortino-nav-item:hover {
+  background: var(--cds-layer-hover-01);
+  color: var(--cds-text-primary);
+}
+
+.fortino-nav-item--active {
+  background: var(--fortino-accent-soft);
+  color: var(--cds-link-primary);
+  box-shadow: inset 4px 0 0 var(--cds-border-interactive);
+  font-weight: 600;
+}
+
+.fortino-nav-item__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.25rem;
+  color: var(--cds-icon-primary);
+}
+
+.fortino-nav-item__label {
+  transition: opacity 0.15s ease;
+}
+
+.fortino-nav-group--footer {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--cds-border-subtle-01);
+}
+
+.fortino-admin-main {
+  margin-left: var(--fortino-sidebar-width);
+  min-height: 100vh;
+  padding-top: 3rem;
+  background: var(--cds-background);
+  transition: margin-left 0.2s ease;
+}
+
+@media (max-width: 1055px) {
+  .fortino-admin-main {
+    margin-left: 0;
+  }
+}
+
+.fortino-page-header {
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+}
+
+.fortino-page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.fortino-page-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.fortino-user-minus-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cds-icon-primary);
+}
+
+.fortino-user-minus-icon__badge {
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  background: var(--cds-layer-01);
+  border-radius: 50%;
+  padding: 1px;
+}
+
+.fortino-walkthrough-step-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cds-link-primary);
+}
+
+.fortino-walkthrough-step-title {
+  margin: 0 0 0.65rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--cds-text-primary);
+}
+
+.fortino-walkthrough-step-body {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--cds-text-secondary);
+  max-width: 52ch;
+}
+
+.fortino-page-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.fortino-admin-inner {
+  padding: 1.5rem 2rem 2.5rem;
+  max-width: 1320px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.fortino-text-secondary {
+  color: var(--cds-text-secondary);
+}
+
+.fortino-text-primary {
+  color: var(--cds-text-primary);
+}
+
+.fortino-text-error {
+  color: var(--cds-support-error);
+  font-weight: 600;
+}
+
+.fortino-text-warning {
+  color: var(--cds-support-warning);
+  font-weight: 600;
+}
+
+.fortino-connection-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.65rem 1rem;
+  border-block-end: 1px solid var(--cds-border-subtle-01);
+}
+
+.fortino-pos-shell .fortino-connection-strip {
+  padding-inline: 1.25rem;
+}
+
+.fortino-connection-strip--warning {
+  background: var(--fortino-warning-bg);
+  border-block-end-color: var(--fortino-warning-border);
+}
+
+.fortino-connection-strip--info {
+  background: var(--fortino-info-bg);
+  border-block-end-color: var(--fortino-info-border);
+}
+
+.fortino-connection-strip--success {
+  background: var(--fortino-success-bg);
+  border-block-end-color: var(--fortino-success-border);
+}
+
+.fortino-connection-strip .cds--inline-notification {
+  flex: 1;
+  max-width: 100%;
+}
+
+/* Dashboard home */
+.fortino-dash-home {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.fortino-dash-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.fortino-tile {
+  padding: 1.5rem;
+  height: 100%;
+}
+
+.fortino-tile-compact {
+  padding: 1.25rem;
+}
+
+.fortino-tile-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+}
+
+.fortino-stat-card-link:hover .fortino-stat-card {
+  background: var(--cds-layer-hover-01);
+  border-color: var(--cds-border-subtle-02);
+}
+
+.fortino-stat-card-link:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Hero compacto */
+.fortino-dash-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--cds-layer-01);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 4px;
+}
+
+.fortino-dash-hero-text {
+  min-width: min(100%, 20rem);
+}
+
+.fortino-dash-hero-date {
+  margin: 0 0 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-dash-hero-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.fortino-dash-hero-desc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-dash-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* 4 KPIs — fila fija */
+.fortino-dash-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.fortino-dash-kpi-grid {
+  row-gap: 1rem;
+}
+
+.fortino-dash-charts-grid {
+  row-gap: 1rem;
+}
+
+.fortino-stat-card {
+  padding: 1.15rem 1.25rem !important;
+  height: 100%;
+  min-height: 7.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border: 1px solid var(--cds-border-subtle-01);
+  border-top: 3px solid var(--cds-border-subtle-01);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.fortino-stat-card--success {
+  border-top-color: var(--fortino-success-border);
+}
+
+.fortino-stat-card--warning {
+  border-top-color: var(--fortino-warning-border);
+}
+
+.fortino-stat-card--error {
+  border-top-color: var(--fortino-error-border);
+}
+
+.fortino-stat-card--info {
+  border-top-color: var(--fortino-info-border);
+}
+
+.fortino-stat-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.fortino-stat-card__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 6px;
+  background: var(--cds-layer-02);
+  color: var(--cds-icon-secondary);
+}
+
+.fortino-stat-card__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+  line-height: 1.3;
+}
+
+.fortino-stat-card__value {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: clamp(1.5rem, 2.2vw, 1.85rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--cds-text-primary);
+  font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.fortino-stat-card__hint {
+  display: block;
+  margin-top: auto;
+  padding-top: 0.35rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-stat-card__link-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--cds-link-primary);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.fortino-stat-card-link:hover .fortino-stat-card__link-hint {
+  opacity: 1;
+}
+
+/* Cuerpo principal */
+.fortino-dash-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.fortino-dash-body-main,
+.fortino-dash-body-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fortino-dash-panel {
+  padding: 1.25rem 1.5rem !important;
+  height: auto;
+}
+
+.fortino-dash-panel--compact {
+  padding: 1rem 1.25rem !important;
+}
+
+.fortino-dash-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.fortino-dash-empty-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-radius: 4px;
+  background: var(--cds-layer-02);
+  color: var(--cds-text-secondary);
+  font-size: 0.9375rem;
+}
+
+.fortino-dash-empty-icon--ok {
+  color: var(--cds-support-success);
+  flex-shrink: 0;
+}
+
+/* Lista stock bajo */
+.fortino-dash-stock-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.fortino-dash-stock-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+  transition: background-color 0.12s ease;
+}
+
+.fortino-dash-stock-item:hover {
+  background: var(--cds-layer-hover-01);
+}
+
+.fortino-dash-stock-main {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.fortino-dash-stock-name {
+  font-weight: 500;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fortino-dash-stock-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.875rem;
+}
+
+/* Ventas recientes */
+.fortino-dash-sales-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fortino-dash-sales-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+}
+
+.fortino-dash-sale-badge {
+  flex-shrink: 0;
+  padding: 0.35rem 0.55rem;
+  border-radius: 4px;
+  background: var(--cds-layer-01);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: 1px solid var(--cds-border-subtle-01);
+}
+
+.fortino-dash-sale-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.fortino-dash-sale-detail {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--cds-text-primary);
+}
+
+.fortino-dash-sale-more {
+  color: var(--cds-text-secondary);
+}
+
+.fortino-dash-sale-time {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--cds-text-helper);
+}
+
+/* Accesos rápidos — lista vertical */
+.fortino-dash-quick-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fortino-dash-quick-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 4px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid transparent;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.fortino-dash-quick-item:hover {
+  background: var(--cds-layer-hover-01);
+  border-color: var(--cds-border-subtle-01);
+}
+
+.fortino-dash-quick-item svg:last-child {
+  margin-left: auto;
+  color: var(--cds-icon-secondary);
+  flex-shrink: 0;
+}
+
+.fortino-dash-quick-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.fortino-dash-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.fortino-dash-hero-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.fortino-chart-tile {
+  padding: 1.25rem 1.5rem 1.5rem;
+  height: 100%;
+}
+
+.fortino-chart-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 1rem;
+}
+
+.fortino-chart-caption strong {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.fortino-chart-caption span {
+  font-size: 0.9375rem;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-bar-chart__plot {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+  align-items: end;
+  min-height: 12rem;
+  padding-top: 0.5rem;
+}
+
+.fortino-bar-chart__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.fortino-bar-chart__bar-wrap {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 9rem;
+}
+
+.fortino-bar-chart__bar {
+  width: 100%;
+  max-width: 2.75rem;
+  margin-inline: auto;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(
+    180deg,
+    var(--cds-link-primary) 0%,
+    color-mix(in srgb, var(--cds-link-primary) 65%, transparent) 100%
+  );
+  transition: height 0.25s ease;
+}
+
+.fortino-bar-chart__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--cds-text-secondary);
+  text-align: center;
+}
+
+.fortino-bar-chart__value {
+  font-size: 0.6875rem;
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--cds-text-primary);
+  text-align: center;
+}
+
+.fortino-donut-chart__body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.fortino-donut-chart__ring {
+  width: 9.5rem;
+  height: 9.5rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.fortino-donut-chart__hole {
+  width: 5.75rem;
+  height: 5.75rem;
+  border-radius: 50%;
+  background: var(--cds-layer-01);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.35rem;
+}
+
+.fortino-donut-chart__center-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-donut-chart__center-value {
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--cds-text-primary);
+}
+
+.fortino-donut-chart__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.fortino-donut-chart__legend li {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.fortino-donut-chart__swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 2px;
+}
+
+.fortino-donut-chart__legend-label {
+  color: var(--cds-text-secondary);
+}
+
+.fortino-donut-chart__legend-value {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8125rem;
+}
+
+.fortino-donut-chart__legend-pct {
+  font-size: 0.75rem;
+  color: var(--cds-text-secondary);
+  min-width: 2rem;
+  text-align: right;
+}
+
+@media (max-width: 1056px) {
+  .fortino-dash-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fortino-dash-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .fortino-donut-chart__body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .fortino-bar-chart__plot {
+    min-height: 10rem;
+  }
+
+  .fortino-admin-inner {
+    padding-inline: 1rem;
+  }
+}
+
+@media (max-width: 672px) {
+  .fortino-dash-kpi-row {
+    grid-template-columns: 1fr;
+  }
+
+  .fortino-dash-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.fortino-dash-metric-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-dash-metric-value {
+  font-size: clamp(1.75rem, 3vw, 2.125rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.fortino-dash-metric-value-sm {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.fortino-dash-metric-hint {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-dash-tile-warn {
+  border-left: 3px solid var(--cds-support-warning);
+}
+
+.fortino-dash-alert-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.fortino-dash-alert-row .cds--inline-notification {
+  flex: 1;
+  max-width: 100%;
+}
+
+.fortino-dash-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.fortino-dash-quick-link {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 0.5rem 0;
+}
+
+.fortino-dash-quick-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  background: var(--cds-layer-accent);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.fortino-dash-quick-label {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.fortino-dash-quick-desc {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-dash-sale-amount {
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.fortino-dash-sale-detail {
+  margin: 0.25rem 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--cds-text-secondary);
+}
+
+.fortino-dash-sale-time {
+  font-size: 0.875rem;
+  color: var(--cds-text-secondary);
+}
+
+.dash-metrics-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+}
+
+.dash-workspace-row {
+  display: grid;
+  grid-template-columns: 1.5fr 0.85fr;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .dash-metrics-row,
+  .dash-workspace-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.receipt-print-area {
+  max-width: min(420px, 94vw);
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt-print-area,
+  .receipt-print-area * {
+    visibility: visible;
+  }
+
+  .receipt-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    padding: 0;
+  }
+
+  .receipt-no-print {
+    display: none !important;
+  }
+}

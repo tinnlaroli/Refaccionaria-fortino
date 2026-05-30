@@ -1,286 +1,716 @@
 import { useEffect, useMemo, useState } from "react";
+
 import { Link } from "react-router-dom";
+
+import {
+
+  Button,
+
+  InlineNotification,
+
+  Stack,
+
+  Tag,
+
+  Tile,
+
+} from "@carbon/react";
+
+import {
+
+  ArrowRight,
+
+  CheckmarkFilled,
+
+  Store,
+
+  WarningAlt,
+
+} from "@carbon/icons-react";
+
 import { fetchDashboardSummary, type DashboardSummary } from "../../api/dashboard.js";
+
 import { QUICK_ACTIONS } from "../../config/modules.js";
+
+import { BarChart } from "../../components/dashboard/BarChart.js";
+
+import { DonutChart } from "../../components/dashboard/DonutChart.js";
+
+import { StatCard } from "../../components/dashboard/StatCard.js";
+
+import { carbonNavIcon } from "../../components/carbon/CarbonNavIcons.js";
+
+import { ErrorBanner } from "../../components/carbon/PageFeedback.js";
+
 import { EmptyState } from "../../components/EmptyState.js";
+
 import { DashboardSkeleton } from "../../components/dashboard/DashboardSkeleton.js";
-import { NavIcon } from "../../components/dashboard/NavIcon.js";
+
 import { StockBadge } from "../../components/StockBadge.js";
+
 import { useAuth } from "../../context/AuthContext.js";
+
 import { usePermissions } from "../../hooks/usePermissions.js";
 
+import { getErrorMessage } from "../../lib/errors.js";
+
+import { buildDashboardKpis, relativeSaleTime } from "./dashboardKpis.js";
+
+
+
 function greeting() {
+
   const h = new Date().getHours();
+
   if (h < 12) return "Buenos días";
+
   if (h < 19) return "Buenas tardes";
+
   return "Buenas noches";
+
 }
+
+
 
 function formatDate() {
+
   return new Date().toLocaleDateString("es-MX", {
+
     weekday: "long",
+
     day: "numeric",
+
     month: "long",
+
   });
+
 }
 
-export function DashboardPage() {
-  const { token, user } = useAuth();
-  const { hasPermission } = usePermissions();
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!token) return;
-    setLoading(true);
-    fetchDashboardSummary(token)
-      .then(setSummary)
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : "No se pudo cargar el panel"),
-      )
-      .finally(() => setLoading(false));
-  }, [token]);
 
-  const quickActions = QUICK_ACTIONS.filter((action) => {
-    if (!action.permission) return true;
-    return hasPermission(action.permission);
+function shortDay(isoDate: string) {
+
+  return new Date(`${isoDate}T12:00:00`).toLocaleDateString("es-MX", {
+
+    weekday: "short",
+
+    day: "numeric",
+
   });
 
+}
+
+
+
+export function DashboardPage() {
+
+  const { token, user } = useAuth();
+
+  const { hasPermission, roleLabel } = usePermissions();
+
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+
+  const [error, setError] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(true);
+
+
+
+  useEffect(() => {
+
+    if (!token) return;
+
+    setLoading(true);
+
+    fetchDashboardSummary(token)
+
+      .then(setSummary)
+
+      .catch((err) => setError(getErrorMessage(err, "No se pudo cargar el panel")))
+
+      .finally(() => setLoading(false));
+
+  }, [token]);
+
+
+
+  const quickActions = QUICK_ACTIONS.filter((action) => {
+
+    if (!action.permission) return true;
+
+    return hasPermission(action.permission);
+
+  });
+
+
+
   const alerts = useMemo(() => {
-    if (!summary) return [];
+
+    if (!summary?.products) return [];
+
     const list = [];
+
     if (summary.products.outOfStock > 0) {
+
       list.push({
-        tone: "danger" as const,
+
+        kind: "error" as const,
+
         title: `${summary.products.outOfStock} pieza(s) sin stock`,
+
         text: "No se pueden vender en mostrador hasta reabastecer.",
+
         to: "/app/inventario?agotado=1",
+
         cta: "Ver agotados",
+
       });
+
     }
+
     if (summary.products.lowStock > 0) {
+
       list.push({
-        tone: "warning" as const,
+
+        kind: "warning" as const,
+
         title: `${summary.products.lowStock} alerta(s) de stock bajo`,
+
         text: "Piezas por debajo del mínimo configurado.",
+
         to: "/app/inventario?bajo=1",
+
         cta: "Reabastecer",
+
       });
+
     }
+
     return list;
+
   }, [summary]);
+
+
 
   if (loading) return <DashboardSkeleton />;
 
+
+
   if (error) {
+
     return (
-      <div className="dashboard-page">
+
+      <Stack gap={4}>
+
+        <ErrorBanner message={error} />
+
         <EmptyState title="No se pudo cargar el panel" description={error} />
-      </div>
+
+      </Stack>
+
     );
+
   }
+
+
 
   if (!summary) return null;
 
+
+
+  const { meta } = summary;
+
+  const canProducts = meta.canViewProducts && summary.products;
+
+  const canSales = meta.canViewSales && summary.salesToday;
+
+  const kpis = buildDashboardKpis(summary);
+
+
+
+  const salesBars =
+
+    summary.salesTrend7Days?.map((day) => ({
+
+      label: shortDay(day.date),
+
+      value: day.total,
+
+    })) ?? [];
+
+
+
+  const inventorySegments = canProducts
+
+    ? [
+
+        {
+
+          label: "Stock saludable",
+
+          value: summary.products!.healthy,
+
+          color: "var(--cds-support-success)",
+
+        },
+
+        {
+
+          label: "Stock bajo",
+
+          value: summary.products!.lowStock,
+
+          color: "var(--cds-support-warning)",
+
+        },
+
+        {
+
+          label: "Sin existencia",
+
+          value: summary.products!.outOfStock,
+
+          color: "var(--cds-support-error)",
+
+        },
+
+      ].filter((s) => s.value > 0)
+
+    : [];
+
+
+
+  const lowStockItems = summary.lowStockItems ?? [];
+
+  const recentSales = summary.recentSales ?? [];
+
+
+
   return (
-    <div className="dashboard-page">
-      <section className="dash-hero">
-        <div className="dash-hero-text">
-          <span className="dash-hero-date">{formatDate()}</span>
-          <h2>
+
+    <div className="fortino-dash-home">
+
+      <header className="fortino-dash-hero">
+
+        <div className="fortino-dash-hero-text">
+
+          <p className="fortino-dash-hero-date">{formatDate()}</p>
+
+          <h1 className="fortino-dash-hero-title">
+
             {greeting()}, {user?.fullName?.split(" ")[0] ?? "equipo"}
-          </h2>
-          <p>
-            Aquí tienes lo esencial de hoy: ventas, inventario y accesos directos
-            para operar la refaccionaria.
+
+          </h1>
+
+          <p className="fortino-dash-hero-desc">
+
+            Resumen operativo · <Tag type="gray" size="sm">{roleLabel}</Tag>
+
           </p>
+
         </div>
-        <Link to="/" className="btn-primary dash-hero-cta">
-          <NavIcon name="pos" size={18} />
+
+        <Button as={Link} to="/" kind="primary" renderIcon={Store} size="lg">
+
           Abrir mostrador
-        </Link>
-      </section>
+
+        </Button>
+
+      </header>
+
+
 
       {alerts.length > 0 && (
-        <section className="dash-alerts" aria-label="Alertas prioritarias">
+
+        <div className="fortino-dash-alerts" aria-label="Alertas prioritarias">
+
           {alerts.map((alert) => (
-            <div key={alert.to} className={`dash-alert dash-alert-${alert.tone}`}>
-              <NavIcon name="alert" size={20} />
-              <div className="dash-alert-body">
-                <strong>{alert.title}</strong>
-                <span>{alert.text}</span>
-              </div>
-              <Link to={alert.to} className="dash-alert-link">
+
+            <div key={alert.to} className="fortino-dash-alert-row">
+
+              <InlineNotification
+                kind={alert.kind}
+                lowContrast
+                title={alert.title}
+                subtitle={alert.text}
+                hideCloseButton
+              />
+
+              <Button as={Link} to={alert.to} kind="ghost" size="sm" renderIcon={ArrowRight}>
+
                 {alert.cta}
-                <NavIcon name="chevron" size={16} />
-              </Link>
+
+              </Button>
+
             </div>
+
           ))}
-        </section>
+
+        </div>
+
       )}
 
-      <section className="dash-metrics-primary">
-        <Link to="/app/ventas" className="metric-hero metric-hero-link">
-          <span className="metric-label">Ventas de hoy</span>
-          <strong className="metric-value-lg">${summary.salesToday.total.toFixed(2)}</strong>
-          <span className="metric-hint">
-            {summary.salesToday.count} operacion{summary.salesToday.count === 1 ? "" : "es"}
-          </span>
-        </Link>
-        <div className="metric-stack">
-          <Link to="/app/productos" className="metric-compact metric-compact-link">
-            <span className="metric-label">Productos activos</span>
-            <strong>{summary.products.active}</strong>
-            <span className="metric-hint">{summary.products.total} en catálogo</span>
-          </Link>
-          <Link
-            to="/app/inventario?bajo=1"
-            className="metric-compact metric-compact-link metric-compact-warning"
-          >
-            <span className="metric-label">Stock bajo</span>
-            <strong>{summary.products.lowStock}</strong>
-            <span className="metric-hint">Por reabastecer</span>
-          </Link>
+
+
+      {kpis.length > 0 && (
+
+        <section className="fortino-dash-kpi-row" aria-label="Indicadores clave">
+
+          {kpis.map((kpi) => (
+
+            <StatCard
+
+              key={kpi.key}
+
+              label={kpi.label}
+
+              value={kpi.value}
+
+              hint={kpi.hint}
+
+              tone={kpi.tone}
+
+              icon={kpi.icon}
+
+              to={kpi.to}
+
+            />
+
+          ))}
+
+        </section>
+
+      )}
+
+
+
+      <div className="fortino-dash-body">
+
+        <div className="fortino-dash-body-main">
+
+          {canSales && salesBars.length > 0 && (
+
+            <Tile className="fortino-dash-panel">
+
+              <BarChart
+
+                title="Ventas — últimos 7 días"
+
+                subtitle="Total diario de operaciones completadas"
+
+                points={salesBars}
+
+                valuePrefix="$"
+
+                formatValue={(v) => `$${v.toFixed(2)}`}
+
+              />
+
+            </Tile>
+
+          )}
+
+
+
+          {canProducts && (
+
+            <Tile className="fortino-dash-panel">
+
+              <div className="fortino-dash-panel-head">
+
+                <div>
+
+                  <h2 className="fortino-dash-section-title">Piezas que requieren atención</h2>
+
+                  <p className="fortino-dash-section-desc">
+
+                    Stock bajo o agotado según el mínimo configurado.
+
+                  </p>
+
+                </div>
+
+                <Link to="/app/inventario?bajo=1" className="cds--link">
+
+                  Ver inventario
+
+                </Link>
+
+              </div>
+
+
+
+              {lowStockItems.length === 0 ? (
+
+                <div className="fortino-dash-empty-inline">
+
+                  <CheckmarkFilled size={20} className="fortino-dash-empty-icon--ok" />
+
+                  <span>Inventario en orden — no hay alertas pendientes.</span>
+
+                </div>
+
+              ) : (
+
+                <ul className="fortino-dash-stock-list">
+
+                  {lowStockItems.map((item) => (
+
+                    <li key={item.id} className="fortino-dash-stock-item">
+
+                      <div className="fortino-dash-stock-main">
+
+                        <Tag type="gray" size="sm" className="mono">
+
+                          {item.sku}
+
+                        </Tag>
+
+                        <span className="fortino-dash-stock-name">{item.name}</span>
+
+                      </div>
+
+                      <div className="fortino-dash-stock-meta">
+
+                        <span
+
+                          className={
+
+                            item.stock <= 0 ? "fortino-text-error" : "fortino-text-warning"
+
+                          }
+
+                        >
+
+                          {item.stock} / {item.minStock}
+
+                        </span>
+
+                        <StockBadge stock={item.stock} minStock={item.minStock} />
+
+                      </div>
+
+                    </li>
+
+                  ))}
+
+                </ul>
+
+              )}
+
+            </Tile>
+
+          )}
+
         </div>
-      </section>
 
-      <div className="dash-workspace">
-        <section className="dashboard-section dash-guide">
-          <div className="section-header">
-            <div>
-              <h2>¿Qué quieres hacer?</h2>
-              <p>Accesos guiados a las tareas más frecuentes.</p>
-            </div>
-          </div>
-          <ul className="guide-actions">
-            {quickActions.map((action) => (
-              <li key={action.label}>
-                <Link to={action.path} className="guide-action-card">
-                  <span className="guide-action-icon">
-                    <NavIcon name={action.icon} size={20} />
-                  </span>
-                  <span className="guide-action-text">
-                    <strong>{action.label}</strong>
-                    <small>{action.description}</small>
-                  </span>
-                  <NavIcon name="chevron" size={18} className="guide-action-chevron" />
+
+
+        <aside className="fortino-dash-body-side">
+
+          {canProducts && inventorySegments.length > 0 && (
+
+            <Tile className="fortino-dash-panel fortino-dash-panel--compact">
+
+              <DonutChart
+
+                title="Salud del inventario"
+
+                subtitle="Piezas activas por estado"
+
+                segments={inventorySegments}
+
+                centerLabel="Activos"
+
+                centerValue={summary.products!.active}
+
+              />
+
+            </Tile>
+
+          )}
+
+
+
+          {canSales && (
+
+            <Tile className="fortino-dash-panel">
+
+              <div className="fortino-dash-panel-head">
+
+                <div>
+
+                  <h2 className="fortino-dash-section-title">Últimas ventas</h2>
+
+                  <p className="fortino-dash-section-desc">Actividad reciente en caja.</p>
+
+                </div>
+
+                <Link to="/app/ventas" className="cds--link">
+
+                  Historial
+
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
 
-        <section className="dashboard-section dash-secondary-stats">
-          <h2 className="section-title-sm">Operación</h2>
-          <dl className="stat-list">
-            <div>
-              <dt>Sin stock</dt>
-              <dd>
-                <Link to="/app/inventario?agotado=1">{summary.products.outOfStock}</Link>
-              </dd>
-            </div>
-            <div>
-              <dt>Categorías</dt>
-              <dd>
-                <Link to="/app/categorias">{summary.categories}</Link>
-              </dd>
-            </div>
-            <div>
-              <dt>Empleados activos</dt>
-              <dd>
-                <Link to="/app/empleados">{summary.users.active}</Link>
-              </dd>
-            </div>
-            <div>
-              <dt>Turnos abiertos</dt>
-              <dd>{summary.cash.openShifts}</dd>
-            </div>
-          </dl>
-        </section>
+              </div>
+
+
+
+              {recentSales.length === 0 ? (
+
+                <EmptyState
+
+                  title="Sin ventas aún"
+
+                  description="Las operaciones del mostrador aparecerán aquí."
+
+                  action={
+
+                    <Button as={Link} to="/" kind="tertiary" size="sm">
+
+                      Ir al mostrador
+
+                    </Button>
+
+                  }
+
+                />
+
+              ) : (
+
+                <ul className="fortino-dash-sales-list">
+
+                  {recentSales.map((sale) => (
+
+                    <li key={sale.id} className="fortino-dash-sales-item">
+
+                      <div className="fortino-dash-sale-badge price">
+
+                        ${Number(sale.total).toFixed(2)}
+
+                      </div>
+
+                      <div className="fortino-dash-sale-body">
+
+                        <p className="fortino-dash-sale-detail">
+
+                          {sale.items
+
+                            .slice(0, 2)
+
+                            .map((i) => `${i.quantity}× ${i.productName}`)
+
+                            .join(" · ")}
+
+                          {sale.items.length > 2 && (
+
+                            <span className="fortino-dash-sale-more">
+
+                              {" "}
+
+                              +{sale.items.length - 2} más
+
+                            </span>
+
+                          )}
+
+                        </p>
+
+                        <time className="fortino-dash-sale-time" dateTime={sale.soldAt}>
+
+                          {relativeSaleTime(sale.soldAt)}
+
+                        </time>
+
+                      </div>
+
+                    </li>
+
+                  ))}
+
+                </ul>
+
+              )}
+
+            </Tile>
+
+          )}
+
+
+
+          {quickActions.length > 0 && (
+
+            <Tile className="fortino-dash-panel fortino-dash-panel--compact">
+
+              <h2 className="fortino-dash-section-title">Accesos rápidos</h2>
+
+              <ul className="fortino-dash-quick-list">
+
+                {quickActions.map((action) => {
+
+                  const Icon = carbonNavIcon(action.icon);
+
+                  return (
+
+                    <li key={action.label}>
+
+                      <Link to={action.path} className="fortino-dash-quick-item">
+
+                        <span className="fortino-dash-quick-icon">
+
+                          <Icon size={18} />
+
+                        </span>
+
+                        <span className="fortino-dash-quick-text">
+
+                          <span className="fortino-dash-quick-label">{action.label}</span>
+
+                          <span className="fortino-dash-quick-desc">{action.description}</span>
+
+                        </span>
+
+                        <ArrowRight size={16} aria-hidden />
+
+                      </Link>
+
+                    </li>
+
+                  );
+
+                })}
+
+              </ul>
+
+            </Tile>
+
+          )}
+
+
+
+          {!canSales && !canProducts && (
+
+            <Tile className="fortino-dash-panel">
+
+              <div className="fortino-dash-empty-inline">
+
+                <WarningAlt size={20} />
+
+                <span>Tu perfil tiene acceso limitado al panel.</span>
+
+              </div>
+
+            </Tile>
+
+          )}
+
+        </aside>
+
       </div>
 
-      <div className="dashboard-columns">
-        <section className="dashboard-section">
-          <div className="section-header">
-            <div>
-              <h2>Alertas de inventario</h2>
-              <p>Piezas que requieren atención inmediata.</p>
-            </div>
-            <Link to="/app/inventario?bajo=1">Ver todo</Link>
-          </div>
-          {summary.lowStockItems.length === 0 ? (
-            <EmptyState
-              title="Inventario en orden"
-              description="No hay piezas por debajo del mínimo."
-            />
-          ) : (
-            <table className="data-table data-table-compact">
-              <thead>
-                <tr>
-                  <th>SKU</th>
-                  <th>Producto</th>
-                  <th>Stock</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.lowStockItems.map((item) => (
-                  <tr key={item.id}>
-                    <td className="sku">{item.sku}</td>
-                    <td>{item.name}</td>
-                    <td className={item.stock <= 0 ? "stock-out" : "stock-low"}>
-                      {item.stock} / {item.minStock}
-                    </td>
-                    <td>
-                      <StockBadge stock={item.stock} minStock={item.minStock} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-
-        <section className="dashboard-section">
-          <div className="section-header">
-            <div>
-              <h2>Últimas ventas</h2>
-              <p>Actividad reciente en caja.</p>
-            </div>
-            <Link to="/app/ventas">Historial</Link>
-          </div>
-          {summary.recentSales.length === 0 ? (
-            <EmptyState
-              title="Sin ventas aún"
-              description="Las operaciones del mostrador aparecerán aquí."
-              action={
-                <Link to="/" className="btn-primary">
-                  Ir al mostrador
-                </Link>
-              }
-            />
-          ) : (
-            <ul className="recent-list recent-list-rich">
-              {summary.recentSales.map((sale) => (
-                <li key={sale.id}>
-                  <div className="recent-sale-main">
-                    <strong className="price">${Number(sale.total).toFixed(2)}</strong>
-                    <span>
-                      {sale.items
-                        .slice(0, 2)
-                        .map((i) => `${i.quantity}x ${i.productName}`)
-                        .join(" · ")}
-                      {sale.items.length > 2 && ` +${sale.items.length - 2}`}
-                    </span>
-                  </div>
-                  <time>{new Date(sale.soldAt).toLocaleString("es-MX")}</time>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
     </div>
+
   );
+
 }
+

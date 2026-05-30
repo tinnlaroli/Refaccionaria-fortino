@@ -9,10 +9,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@carbon/icons-react": "^11.81.0",
+    "@carbon/react": "^1.108.0",
+    "@carbon/styles": "^1.107.0",
+    "@sentry/react": "^10.55.0",
     "dexie": "^4.0.11",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.6.2"
+    "react-router-dom": "^7.6.2",
+    "sass": "^1.100.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.6",

@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import { InlineLoading } from "@carbon/react";
 import { useAuth } from "../context/AuthContext.js";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -6,8 +7,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
-        Cargando...
+      <div style={{ padding: "3rem", display: "flex", justifyContent: "center" }}>
+        <InlineLoading description="Verificando sesión…" />
       </div>
     );
   }

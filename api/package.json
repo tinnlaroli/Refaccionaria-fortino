@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
+    "dev:docker": "nodemon --legacy-watch --watch src --ext js src/index.js",
     "start": "node src/index.js",
     "build:db": "npm run build --prefix db",
     "postinstall": "npm run build:db"
@@ -17,5 +18,8 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }

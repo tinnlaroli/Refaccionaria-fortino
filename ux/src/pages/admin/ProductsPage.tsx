@@ -1,6 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
+  Button,
+  Checkbox,
+  DataTable,
+  NumberInput,
+  Search,
+  Select,
+  SelectItem,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+  TextInput,
+  Toggle,
+} from "@carbon/react";
+import { Add, Edit, InventoryManagement } from "@carbon/icons-react";
+import {
   createProduct,
   fetchAdminProducts,
   updateProduct,
@@ -9,12 +29,30 @@ import {
   type ProductInput,
 } from "../../api/admin-products.js";
 import { fetchCategories, type Category } from "../../api/admin-categories.js";
+import { AppModal } from "../../components/carbon/AppModal.js";
+import {
+  InteractiveTableRow,
+  TABLE_ACTIONS_RAIL,
+} from "../../components/carbon/InteractiveTableRow.js";
+import { ErrorBanner, TableSkeleton } from "../../components/carbon/PageFeedback.js";
 import { EmptyState } from "../../components/EmptyState.js";
 import { StockAdjustModal } from "../../components/StockAdjustModal.js";
 import { StockBadge } from "../../components/StockBadge.js";
 import { useAuth } from "../../context/AuthContext.js";
 import { useToast } from "../../context/ToastContext.js";
 import { usePermissions } from "../../hooks/usePermissions.js";
+import { getErrorMessage } from "../../lib/errors.js";
+import {
+  blockDigitsInName,
+  combine,
+  description,
+  nameField,
+  nonNegativeInt,
+  password,
+  price,
+  salePriceAboveCost,
+  sku as validateSku,
+} from "../../lib/validation.js";
 
 const emptyForm: ProductInput = {
   sku: "",
@@ -27,6 +65,27 @@ const emptyForm: ProductInput = {
   minStock: 0,
   isActive: true,
 };
+
+type FormFields = "sku" | "name" | "description" | "salePrice" | "purchasePrice" | "stock" | "minStock";
+
+function fieldRules(
+  form: ProductInput,
+  editing: AdminProduct | null,
+  canViewCosts: boolean,
+): Partial<Record<FormFields, string | undefined>> {
+  return {
+    sku: editing ? undefined : validateSku(form.sku),
+    name: nameField(form.name, "Nombre del producto"),
+    description: description(form.description ?? ""),
+    salePrice: combine(
+      price(form.salePrice, "Precio de venta"),
+      canViewCosts ? salePriceAboveCost(form.salePrice, form.purchasePrice) : undefined,
+    ),
+    purchasePrice: canViewCosts ? price(form.purchasePrice ?? "", "Precio de compra") : undefined,
+    stock: nonNegativeInt(form.stock ?? 0, "Stock"),
+    minStock: nonNegativeInt(form.minStock ?? 0, "Stock mínimo"),
+  };
+}
 
 export function ProductsPage() {
   const { token } = useAuth();
@@ -42,6 +101,7 @@ export function ProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<AdminProduct | null>(null);
   const [form, setForm] = useState<ProductInput>(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FormFields, string>>>({});
   const [saving, setSaving] = useState(false);
   const [adjustProduct, setAdjustProduct] = useState<AdminProduct | null>(null);
 
@@ -55,16 +115,13 @@ export function ProductsPage() {
     setError(null);
     try {
       const [list, cats] = await Promise.all([
-        fetchAdminProducts(token, {
-          q: filter || undefined,
-          lowStock: lowStockOnly,
-        }),
+        fetchAdminProducts(token, { q: filter || undefined, lowStock: lowStockOnly }),
         fetchCategories(token),
       ]);
       setProducts(list);
       setCategories(cats);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar productos");
+      setError(getErrorMessage(err, "Error al cargar productos"));
     } finally {
       setLoading(false);
     }
@@ -95,6 +152,7 @@ export function ProductsPage() {
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm);
+    setFieldErrors({});
     setModalOpen(true);
   };
 
@@ -111,6 +169,7 @@ export function ProductsPage() {
       minStock: product.minStock,
       isActive: product.isActive,
     });
+    setFieldErrors({});
     setModalOpen(true);
   };
 
@@ -118,19 +177,35 @@ export function ProductsPage() {
     setModalOpen(false);
     setEditing(null);
     setForm(emptyForm);
+    setFieldErrors({});
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
+  const validateForm = () => {
+    const next = fieldRules(form, editing, canViewCosts);
+    const filtered = Object.fromEntries(
+      Object.entries(next).filter(([, v]) => v),
+    ) as Partial<Record<FormFields, string>>;
+    setFieldErrors(filtered);
+    return Object.keys(filtered).length === 0;
+  };
+
+  const touchField = (field: FormFields) => {
+    const msg = fieldRules(form, editing, canViewCosts)[field];
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (msg) next[field] = msg;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!token || !validateForm()) return;
     setSaving(true);
-    setError(null);
     try {
       const payload = {
         ...form,
-        purchasePrice: canViewCosts
-          ? form.purchasePrice
-          : form.purchasePrice || form.salePrice,
+        purchasePrice: canViewCosts ? form.purchasePrice : form.purchasePrice || form.salePrice,
       };
       if (editing) {
         await updateProduct(token, editing.id, payload);
@@ -142,50 +217,71 @@ export function ProductsPage() {
       closeModal();
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo guardar");
+      setFieldErrors({ name: getErrorMessage(err, "No se pudo guardar") });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await load();
-  };
+  const headers = [
+    { key: "sku", header: "SKU" },
+    { key: "name", header: "Nombre" },
+    { key: "category", header: "Categoría" },
+    ...(canViewCosts ? [{ key: "cost", header: "Costo" }] : []),
+    { key: "sale", header: "Venta" },
+    { key: "stock", header: "Stock" },
+    { key: "status", header: "Estado" },
+    ...(canEdit ? [TABLE_ACTIONS_RAIL] : []),
+  ];
+
+  const rows = products.map((p) => ({
+    id: p.id,
+    sku: p.sku,
+    name: p.name,
+    category: p.categoryId ? categoryMap.get(p.categoryId) ?? "—" : "—",
+    cost: p.purchasePrice ? `$${Number(p.purchasePrice).toFixed(2)}` : "—",
+    sale: `$${Number(p.salePrice).toFixed(2)}`,
+    stock: String(p.stock),
+    status: p.id,
+    _product: p,
+  }));
 
   return (
-    <div className="dashboard-page">
-      <div className="page-actions-bar">
+    <div className="fortino-admin-page">
+      <div className="fortino-page-actions">
         {canCreate && (
-          <button type="button" className="btn-primary" onClick={openCreate}>
-            + Agregar producto
-          </button>
+          <Button kind="primary" renderIcon={Add} onClick={openCreate}>
+            Agregar producto
+          </Button>
         )}
       </div>
 
-      <form className="search-bar" onSubmit={handleSearch}>
-        <input
-          type="search"
-          placeholder="Buscar por SKU o nombre..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
-        <label className="form-check" style={{ margin: 0 }}>
-          <input
-            type="checkbox"
-            checked={lowStockOnly}
-            onChange={(e) => setLowStockOnly(e.target.checked)}
+      <div className="fortino-toolbar">
+        <div className="fortino-toolbar-grow">
+          <Search
+            id="products-filter"
+            labelText="Buscar productos"
+            placeholder="SKU o nombre…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && load()}
           />
-          Solo stock bajo
-        </label>
-        <button type="submit" className="btn-ghost">
+        </div>
+        <Checkbox
+          id="low-stock-filter"
+          labelText="Solo stock bajo"
+          checked={lowStockOnly}
+          onChange={(_, { checked }) => setLowStockOnly(checked)}
+        />
+        <Button kind="secondary" onClick={() => load()}>
           Buscar
-        </button>
-      </form>
+        </Button>
+      </div>
 
-      {error && <p className="error-text">{error}</p>}
+      {error && <ErrorBanner message={error} onClose={() => setError(null)} />}
+
       {loading ? (
-        <p style={{ color: "var(--text-muted)" }}>Cargando...</p>
+        <TableSkeleton />
       ) : products.length === 0 ? (
         <EmptyState
           title="Sin productos"
@@ -194,81 +290,92 @@ export function ProductsPage() {
               ? "No hay piezas con stock bajo en este momento."
               : "Agrega la primera refacción al catálogo."
           }
-          action={
-            canCreate ? (
-              <button type="button" className="btn-primary" onClick={openCreate}>
-                + Agregar producto
-              </button>
-            ) : undefined
-          }
+          actionLabel={canCreate ? "Agregar producto" : undefined}
+          onAction={canCreate ? openCreate : undefined}
         />
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Nombre</th>
-              <th>Categoría</th>
-              {canViewCosts && <th>Costo</th>}
-              <th>Venta</th>
-              <th>Stock</th>
-              <th>Estado</th>
-              {canEdit && <th />}
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => (
-              <tr key={p.id}>
-                <td className="sku">{p.sku}</td>
-                <td>{p.name}</td>
-                <td>{p.categoryId ? categoryMap.get(p.categoryId) ?? "—" : "—"}</td>
-                {canViewCosts && (
-                  <td className="price">
-                    {p.purchasePrice ? `$${Number(p.purchasePrice).toFixed(2)}` : "—"}
-                  </td>
-                )}
-                <td className="price">${Number(p.salePrice).toFixed(2)}</td>
-                <td
-                  className={
-                    p.stock <= 0
-                      ? "stock-out"
-                      : p.stock <= p.minStock
-                        ? "stock-low"
-                        : ""
-                  }
-                >
-                  {p.stock}
-                </td>
-                <td>
-                  <StockBadge stock={p.stock} minStock={p.minStock} />
-                  {!p.isActive && (
-                    <span className="badge" style={{ marginLeft: "0.35rem" }}>
-                      Inactivo
-                    </span>
-                  )}
-                </td>
-                {canEdit && (
-                  <td style={{ whiteSpace: "nowrap" }}>
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      onClick={() => openEdit(p)}
+        <div className="fortino-interactive-table">
+        <DataTable rows={rows} headers={headers} size="md">
+          {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
+            <Table {...getTableProps()}>
+              <TableHead>
+                <TableRow>
+                  {headers.map((h) => (
+                    <TableHeader
+                      {...getHeaderProps({ header: h })}
+                      key={h.key}
+                      className={h.key === "_rail" ? "fortino-row-actions-cell" : undefined}
                     >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      onClick={() => setAdjustProduct(p)}
+                      {h.header}
+                    </TableHeader>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.map((row) => {
+                  const product = products.find((p) => p.id === row.id)!;
+                  const rowActions = canEdit
+                    ? [
+                        {
+                          label: "Editar producto",
+                          icon: Edit,
+                          onClick: () => openEdit(product),
+                        },
+                        {
+                          label: "Ajustar stock",
+                          icon: InventoryManagement,
+                          onClick: () => setAdjustProduct(product),
+                        },
+                      ]
+                    : [];
+                  return (
+                    <InteractiveTableRow
+                      key={row.id}
+                      rowProps={getRowProps({ row })}
+                      onOpen={canEdit ? () => openEdit(product) : undefined}
+                      actions={rowActions}
+                      ariaLabel={`Producto ${product.name}`}
                     >
-                      Stock
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      {row.cells.map((cell) => {
+                        if (cell.info.header === "status") {
+                          return (
+                            <TableCell key={cell.id}>
+                              <Stack orientation="horizontal" gap={2}>
+                                <StockBadge stock={product.stock} minStock={product.minStock} />
+                                {!product.isActive && <Tag type="gray" size="sm">Inactivo</Tag>}
+                              </Stack>
+                            </TableCell>
+                          );
+                        }
+                        if (cell.info.header === "_rail") return null;
+                        if (cell.info.header === "sku" || cell.info.header === "sale" || cell.info.header === "cost") {
+                          return (
+                            <TableCell key={cell.id} className="mono">
+                              {cell.value}
+                            </TableCell>
+                          );
+                        }
+                        if (cell.info.header === "stock") {
+                          const low = product.stock <= product.minStock;
+                          const out = product.stock <= 0;
+                          return (
+                            <TableCell key={cell.id}>
+                              <span style={{ color: out ? "var(--cds-support-error)" : low ? "var(--cds-support-warning)" : undefined }}>
+                                {cell.value}
+                              </span>
+                            </TableCell>
+                          );
+                        }
+                        return <TableCell key={cell.id}>{cell.value}</TableCell>;
+                      })}
+                    </InteractiveTableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </DataTable>
+        </div>
       )}
 
       {adjustProduct && (
@@ -282,132 +389,126 @@ export function ProductsPage() {
               setAdjustProduct(null);
               await load();
             } catch (err) {
-              toastError(err instanceof Error ? err.message : "Error al ajustar");
+              toastError(getErrorMessage(err));
               throw err;
             }
           }}
         />
       )}
 
-      {modalOpen && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div
-            className="modal-glass modal-wide"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3>{editing ? "Editar producto" : "Nuevo producto"}</h3>
-            <form className="form-grid" onSubmit={handleSubmit}>
-              <label>
-                SKU
-                <input
-                  value={form.sku}
-                  onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                  required
-                  disabled={!!editing}
-                />
-              </label>
-              <label>
-                Nombre
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  required
-                />
-              </label>
-              <label className="form-span-2">
-                Descripción
-                <input
-                  value={form.description ?? ""}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                />
-              </label>
-              <label>
-                Categoría
-                <select
-                  value={form.categoryId ?? ""}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      categoryId: e.target.value || null,
-                    })
-                  }
-                >
-                  <option value="">Sin categoría</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Precio venta
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.salePrice}
-                  onChange={(e) => setForm({ ...form, salePrice: e.target.value })}
-                  required
-                />
-              </label>
-              {canViewCosts && (
-                <label>
-                  Precio compra
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.purchasePrice}
-                    onChange={(e) =>
-                      setForm({ ...form, purchasePrice: e.target.value })
-                    }
-                    required
-                  />
-                </label>
-              )}
-              <label>
-                Stock actual
-                <input
-                  type="number"
-                  min="0"
-                  value={form.stock ?? 0}
-                  onChange={(e) =>
-                    setForm({ ...form, stock: Number(e.target.value) })
-                  }
-                />
-              </label>
-              <label>
-                Stock mínimo
-                <input
-                  type="number"
-                  min="0"
-                  value={form.minStock ?? 0}
-                  onChange={(e) =>
-                    setForm({ ...form, minStock: Number(e.target.value) })
-                  }
-                />
-              </label>
-              <label className="form-check">
-                <input
-                  type="checkbox"
-                  checked={form.isActive ?? true}
-                  onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                />
-                Producto activo en catálogo
-              </label>
-              <div className="form-actions form-span-2">
-                <button type="button" className="btn-ghost" onClick={closeModal}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary" disabled={saving}>
-                  {saving ? "Guardando..." : "Guardar"}
-                </button>
-              </div>
-            </form>
+      <AppModal
+        open={modalOpen}
+        title={editing ? "Editar producto" : "Nuevo producto"}
+        subtitle={editing ? `SKU ${editing.sku}` : "Completa los datos del catálogo"}
+        size="lg"
+        onClose={closeModal}
+        onSubmit={handleSubmit}
+        loading={saving}
+      >
+        <Stack gap={5}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <TextInput
+              id="product-sku"
+              labelText="SKU"
+              value={form.sku}
+              onChange={(e) => setForm({ ...form, sku: e.target.value.toUpperCase().replace(/[^A-Z0-9._-]/g, "") })}
+              onBlur={() => touchField("sku")}
+              disabled={!!editing}
+              invalid={Boolean(fieldErrors.sku)}
+              invalidText={fieldErrors.sku}
+              helperText="Letras, números, puntos y guiones"
+              required
+            />
+            <TextInput
+              id="product-name"
+              labelText="Nombre"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: blockDigitsInName(e.target.value) })}
+              onBlur={() => touchField("name")}
+              invalid={Boolean(fieldErrors.name)}
+              invalidText={fieldErrors.name}
+              helperText="Solo letras, sin números"
+              required
+            />
           </div>
-        </div>
-      )}
+          <TextInput
+            id="product-desc"
+            labelText="Descripción"
+            value={form.description ?? ""}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            onBlur={() => touchField("description")}
+            invalid={Boolean(fieldErrors.description)}
+            invalidText={fieldErrors.description}
+            helperText="Opcional · máximo 500 caracteres"
+          />
+          <Select
+            id="product-category"
+            labelText="Categoría"
+            value={form.categoryId ?? ""}
+            onChange={(e) => setForm({ ...form, categoryId: e.target.value || null })}
+          >
+            <SelectItem value="" text="Sin categoría" />
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.id} text={c.name} />
+            ))}
+          </Select>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <NumberInput
+              id="product-sale"
+              label="Precio de venta"
+              min={0}
+              step={0.01}
+              value={form.salePrice}
+              onChange={(_, { value }) => setForm({ ...form, salePrice: String(value) })}
+              onBlur={() => touchField("salePrice")}
+              invalid={Boolean(fieldErrors.salePrice)}
+              invalidText={fieldErrors.salePrice}
+              required
+            />
+            {canViewCosts && (
+              <NumberInput
+                id="product-cost"
+                label="Precio de compra"
+                min={0}
+                step={0.01}
+                value={form.purchasePrice ?? ""}
+                onChange={(_, { value }) => setForm({ ...form, purchasePrice: String(value) })}
+                onBlur={() => touchField("purchasePrice")}
+                invalid={Boolean(fieldErrors.purchasePrice)}
+                invalidText={fieldErrors.purchasePrice}
+              />
+            )}
+            <NumberInput
+              id="product-stock"
+              label="Stock actual"
+              min={0}
+              step={1}
+              value={form.stock ?? 0}
+              onChange={(_, { value }) => setForm({ ...form, stock: Number(value) })}
+              onBlur={() => touchField("stock")}
+              invalid={Boolean(fieldErrors.stock)}
+              invalidText={fieldErrors.stock}
+            />
+            <NumberInput
+              id="product-min"
+              label="Stock mínimo"
+              min={0}
+              step={1}
+              value={form.minStock ?? 0}
+              onChange={(_, { value }) => setForm({ ...form, minStock: Number(value) })}
+              onBlur={() => touchField("minStock")}
+              invalid={Boolean(fieldErrors.minStock)}
+              invalidText={fieldErrors.minStock}
+            />
+          </div>
+          <Toggle
+            id="product-active"
+            labelText="Producto activo en catálogo"
+            toggled={form.isActive ?? true}
+            onToggle={(checked) => setForm({ ...form, isActive: checked })}
+          />
+        </Stack>
+      </AppModal>
     </div>
   );
 }

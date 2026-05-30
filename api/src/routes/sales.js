@@ -61,11 +61,36 @@ router.post(
       }
     }
 
+    const [openShift] = await db
+      .select({ id: cashShifts.id })
+      .from(cashShifts)
+      .where(
+        and(
+          eq(cashShifts.userId, req.user.sub),
+          eq(cashShifts.status, "open"),
+        ),
+      )
+      .limit(1);
+
+    if (!openShift) {
+      res.status(422).json({
+        code: "NO_OPEN_SHIFT",
+        error: "Debes abrir un turno de caja antes de registrar ventas.",
+      });
+      return;
+    }
+
+    const shiftId = parsed.data.shiftId ?? openShift.id;
+    if (shiftId !== openShift.id) {
+      res.status(400).json({ error: "El turno indicado no coincide con tu turno abierto." });
+      return;
+    }
+
     try {
       const result = await createSaleWithItems({
         clientUuid: parsed.data.clientUuid,
         cashierId: req.user.sub,
-        shiftId: parsed.data.shiftId,
+        shiftId,
         soldAt: new Date(parsed.data.soldAt),
         paymentMethod: parsed.data.paymentMethod,
         amountReceived: parsed.data.amountReceived,

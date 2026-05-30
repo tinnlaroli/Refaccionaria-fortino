@@ -12,8 +12,8 @@ export default defineConfig({
         name: "Refaccionaria Fortino POS",
         short_name: "Fortino POS",
         description: "Punto de venta offline-first",
-        theme_color: "#1c1917",
-        background_color: "#1c1917",
+        theme_color: "#0f62fe",
+        background_color: "#eef1f5",
         display: "standalone",
         start_url: "/pos/",
         scope: "/pos/",
@@ -63,6 +63,12 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+    watch: process.env.CHOKIDAR_USEPOLLING
+      ? { usePolling: true, interval: 1000 }
+      : undefined,
+    hmr: process.env.VITE_HMR_CLIENT_PORT
+      ? { clientPort: Number(process.env.VITE_HMR_CLIENT_PORT) }
+      : undefined,
     proxy: {
       "/api": {
         target: process.env.VITE_API_URL ?? "http://localhost:3000",

@@ -1,5 +1,5 @@
-import { products, sales, syncCursors } from "@refaccionaria/db";
-import { eq, gt } from "drizzle-orm";
+import { products, sales, syncCursors, cashShifts } from "@refaccionaria/db";
+import { and, eq, gt } from "drizzle-orm";
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db.js";
@@ -87,10 +87,40 @@ router.post("/push", requireAuth, async (req, res) => {
     }
 
     try {
+      const [openShift] = await db
+        .select({ id: cashShifts.id })
+        .from(cashShifts)
+        .where(
+          and(
+            eq(cashShifts.userId, req.user.sub),
+            eq(cashShifts.status, "open"),
+          ),
+        )
+        .limit(1);
+
+      if (!openShift) {
+        results.push({
+          clientUuid: tx.clientUuid,
+          status: "error",
+          error: "Debes abrir un turno de caja antes de sincronizar ventas.",
+        });
+        continue;
+      }
+
+      const shiftId = tx.shiftId ?? openShift.id;
+      if (shiftId !== openShift.id) {
+        results.push({
+          clientUuid: tx.clientUuid,
+          status: "error",
+          error: "El turno indicado no coincide con tu turno abierto.",
+        });
+        continue;
+      }
+
       const sale = await createSaleWithItems({
         clientUuid: tx.clientUuid,
         cashierId: req.user.sub,
-        shiftId: tx.shiftId,
+        shiftId,
         soldAt: new Date(tx.soldAt),
         paymentMethod: tx.paymentMethod,
         amountReceived: tx.amountReceived,

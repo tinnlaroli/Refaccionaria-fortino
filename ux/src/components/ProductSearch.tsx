@@ -1,22 +1,45 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
+import { Button, Search, Tag } from "@carbon/react";
+import { Barcode, Search as SearchIcon } from "@carbon/icons-react";
 import { searchProductsLocal, findBySku } from "../api/products.js";
 import { StockBadge } from "./StockBadge.js";
 import { useToast } from "../context/ToastContext.js";
 import type { Product } from "../types/index.js";
 
+export type ProductSearchHandle = {
+  focus: () => void;
+};
+
 type Props = {
   onSelect: (product: Product) => void;
 };
 
-export function ProductSearch({ onSelect }: Props) {
+export const ProductSearch = forwardRef<ProductSearchHandle, Props>(function ProductSearch(
+  { onSelect },
+  ref,
+) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const { error: toastError } = useToast();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => inputRef.current?.focus(),
+  }));
 
   const search = useCallback(async (q: string) => {
     const list = await searchProductsLocal(q);
     setResults(list);
+    setHighlightIndex(-1);
   }, []);
 
   useEffect(() => {
@@ -27,6 +50,9 @@ export function ProductSearch({ onSelect }: Props) {
     const t = setTimeout(() => search(query), 150);
     return () => clearTimeout(t);
   }, [query, search]);
+
+  const availableResults = results.filter((p) => p.isActive && p.stock > 0);
+  const visibleResults = results.slice(0, 8);
 
   const trySelect = (product: Product) => {
     if (!product.isActive) {
@@ -40,6 +66,7 @@ export function ProductSearch({ onSelect }: Props) {
     onSelect(product);
     setQuery("");
     setResults([]);
+    setHighlightIndex(-1);
     inputRef.current?.focus();
   };
 
@@ -48,63 +75,104 @@ export function ProductSearch({ onSelect }: Props) {
     const trimmed = query.trim();
     if (!trimmed) return;
 
+    if (highlightIndex >= 0 && visibleResults[highlightIndex]) {
+      trySelect(visibleResults[highlightIndex]);
+      return;
+    }
+
     const product = await findBySku(trimmed);
     if (product) {
       trySelect(product);
       return;
     }
 
-    const available = results.filter((p) => p.isActive && p.stock > 0);
-    if (available.length === 1) {
-      trySelect(available[0]);
-    } else if (results.length > 0 && available.length === 0) {
+    if (availableResults.length === 1) {
+      trySelect(availableResults[0]);
+    } else if (results.length > 0 && availableResults.length === 0) {
       toastError("Ningún resultado tiene stock disponible");
+    } else if (results.length === 0) {
+      toastError("No se encontró ningún producto con ese SKU o nombre");
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!query || visibleResults.length === 0) {
+      if (e.key === "Escape") {
+        setQuery("");
+        setResults([]);
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((i) => Math.min(i + 1, visibleResults.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setQuery("");
+      setResults([]);
+      setHighlightIndex(-1);
+    }
+  };
+
+  useEffect(() => {
+    if (highlightIndex < 0 || !listRef.current) return;
+    const item = listRef.current.children[highlightIndex] as HTMLElement | undefined;
+    item?.scrollIntoView({ block: "nearest" });
+  }, [highlightIndex]);
+
   return (
-    <div>
-      <form className="search-bar" onSubmit={handleSubmit}>
-        <input
+    <div className="fortino-pos-search">
+      <form className="fortino-pos-search-form" onSubmit={handleSubmit}>
+        <Search
           ref={inputRef}
-          type="text"
-          placeholder="Escanear SKU o buscar pieza..."
+          id="pos-product-search"
+          labelText="Buscar producto"
+          placeholder="Escanear SKU o buscar pieza… (F2)"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          size="lg"
           autoComplete="off"
         />
-        <button type="submit" className="btn-primary">
+        <Button type="submit" kind="primary" size="lg">
           Agregar
-        </button>
+        </Button>
       </form>
-      {results.length > 0 && query && (
-        <ul
-          style={{
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-            maxHeight: 240,
-            overflow: "auto",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-          }}
-        >
-          {results.slice(0, 8).map((p) => {
+
+      <p className="fortino-pos-search-hint cds--label">
+        <Barcode size={14} aria-hidden />
+        Escanea y presiona Enter · ↑↓ para navegar resultados
+      </p>
+
+      {visibleResults.length > 0 && query && (
+        <ul className="fortino-search-results" ref={listRef} role="listbox">
+          {visibleResults.map((p, index) => {
             const unavailable = !p.isActive || p.stock <= 0;
+            const highlighted = index === highlightIndex;
             return (
-              <li key={p.id}>
+              <li key={p.id} role="option" aria-selected={highlighted}>
                 <button
                   type="button"
-                  className="search-result-item"
+                  className={`fortino-search-result${highlighted ? " fortino-search-result--active" : ""}${unavailable ? " fortino-search-result--disabled" : ""}`}
                   disabled={unavailable}
                   onClick={() => trySelect(p)}
+                  onMouseEnter={() => setHighlightIndex(index)}
                 >
-                  <span>
-                    <span className="sku">{p.sku}</span> — {p.name}
+                  <span className="fortino-search-result-main">
+                    <Tag type="gray" size="sm" className="sku">
+                      {p.sku}
+                    </Tag>
+                    <span className="fortino-search-result-name">{p.name}</span>
                   </span>
-                  <span className="search-result-meta">
+                  <span className="fortino-search-result-meta">
                     <StockBadge stock={p.stock} minStock={p.minStock} />
-                    <span className="price">${Number(p.salePrice).toFixed(2)}</span>
+                    <span className="fortino-search-result-price price">
+                      ${Number(p.salePrice).toFixed(2)}
+                    </span>
                   </span>
                 </button>
               </li>
@@ -112,6 +180,13 @@ export function ProductSearch({ onSelect }: Props) {
           })}
         </ul>
       )}
+
+      {query && results.length === 0 && (
+        <div className="fortino-search-empty">
+          <SearchIcon size={20} aria-hidden />
+          <span>Sin coincidencias para «{query}»</span>
+        </div>
+      )}
     </div>
   );
-}
+});

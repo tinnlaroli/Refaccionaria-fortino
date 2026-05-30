@@ -1,5 +1,22 @@
 import { useState } from "react";
+import {
+  InlineNotification,
+  NumberInput,
+  Select,
+  SelectItem,
+  Stack,
+  TextInput,
+} from "@carbon/react";
 import type { AdminProduct } from "../api/admin-products.js";
+import { AppModal } from "./carbon/AppModal.js";
+import {
+  combine,
+  nonNegativeInt,
+  optionalNote,
+  positiveInt,
+  required,
+  requiredNoteForReason,
+} from "../lib/validation.js";
 
 const REASONS = [
   { value: "entrada", label: "Entrada de mercancía" },
@@ -15,6 +32,8 @@ export type StockAdjustPayload = {
   note?: string;
 };
 
+type FormFields = "quantity" | "setValue" | "reason" | "note";
+
 type Props = {
   product: AdminProduct;
   onClose: () => void;
@@ -23,135 +42,188 @@ type Props = {
 
 export function StockAdjustModal({ product, onClose, onSubmit }: Props) {
   const [mode, setMode] = useState<"add" | "remove" | "set">("add");
-  const [quantity, setQuantity] = useState(1);
-  const [setValue, setSetValue] = useState(product.stock);
+  const [quantity, setQuantity] = useState<string | number>(1);
+  const [setValue, setSetValue] = useState<string | number>(product.stock);
   const [reason, setReason] = useState<StockAdjustPayload["reason"]>("entrada");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FormFields, string>>>({});
 
+  const qtyNum = Number(quantity) || 0;
+  const setNum = Number(setValue) || 0;
   const previewStock =
-    mode === "set" ? setValue : mode === "add" ? product.stock + quantity : product.stock - quantity;
+    mode === "set" ? setNum : mode === "add" ? product.stock + qtyNum : product.stock - qtyNum;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const getErrors = (): Partial<Record<FormFields, string>> => {
+    const errors: Partial<Record<FormFields, string>> = {};
+    if (mode === "set") {
+      const err = nonNegativeInt(setNum, "Nuevo stock");
+      if (err) errors.setValue = err;
+    } else {
+      const err = positiveInt(quantity, "Cantidad");
+      if (err) errors.quantity = err;
+    }
+    const reasonErr = required(reason, "El motivo");
+    if (reasonErr) errors.reason = reasonErr;
+    const noteErr = combine(
+      optionalNote(note),
+      requiredNoteForReason(reason, note),
+    );
+    if (noteErr) errors.note = noteErr;
+    return errors;
+  };
+
+  const validate = () => {
+    const next = getErrors();
+    setFieldErrors(next);
+    if (Object.keys(next).length > 0) return false;
+
+    let delta = 0;
+    if (mode === "add") delta = qtyNum;
+    else if (mode === "remove") delta = -qtyNum;
+    else delta = setNum - product.stock;
+
+    if (delta === 0) {
+      setFormError("No hay cambio en el stock");
+      return false;
+    }
+    if (previewStock < 0) {
+      setFormError("El stock no puede quedar negativo");
+      return false;
+    }
+    setFormError(null);
+    return true;
+  };
+
+  const touchField = (field: FormFields) => {
+    const msg = getErrors()[field];
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (msg) next[field] = msg;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
     setSaving(true);
-    setError(null);
     try {
       let delta = 0;
-      if (mode === "add") delta = quantity;
-      else if (mode === "remove") delta = -quantity;
-      else delta = setValue - product.stock;
-
-      if (delta === 0) {
-        setError("No hay cambio en el stock");
-        setSaving(false);
-        return;
-      }
-      if (previewStock < 0) {
-        setError("El stock no puede quedar negativo");
-        setSaving(false);
-        return;
-      }
+      if (mode === "add") delta = qtyNum;
+      else if (mode === "remove") delta = -qtyNum;
+      else delta = setNum - product.stock;
 
       await onSubmit({ delta, reason, note: note.trim() || undefined });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo ajustar el stock");
+      setFormError(err instanceof Error ? err.message : "No se pudo ajustar el stock");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-glass" onClick={(e) => e.stopPropagation()}>
-        <h3>Ajustar inventario</h3>
-        <p className="modal-subtitle">
-          <span className="sku">{product.sku}</span> — {product.name}
-        </p>
-        <p className="modal-subtitle">
+    <AppModal
+      open
+      title="Ajustar inventario"
+      subtitle={`${product.sku} — ${product.name}`}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      submitLabel="Confirmar ajuste"
+      loading={saving}
+    >
+      <Stack gap={5}>
+        <p className="cds--body-compact-01" style={{ margin: 0, color: "var(--cds-text-secondary)" }}>
           Stock actual: <strong>{product.stock}</strong> · Mínimo: {product.minStock}
         </p>
 
-        <form className="form-grid" onSubmit={handleSubmit}>
-          <label className="form-span-2">
-            Tipo de movimiento
-            <select
-              value={mode}
-              onChange={(e) => setMode(e.target.value as "add" | "remove" | "set")}
-            >
-              <option value="add">Entrada (+)</option>
-              <option value="remove">Salida (−)</option>
-              <option value="set">Fijar cantidad exacta</option>
-            </select>
-          </label>
+        <Select
+          id="adjust-mode"
+          labelText="Tipo de movimiento"
+          value={mode}
+          onChange={(e) => {
+            setMode(e.target.value as "add" | "remove" | "set");
+            setFieldErrors({});
+            setFormError(null);
+          }}
+        >
+          <SelectItem value="add" text="Entrada (+)" />
+          <SelectItem value="remove" text="Salida (−)" />
+          <SelectItem value="set" text="Fijar cantidad exacta" />
+        </Select>
 
-          {mode === "set" ? (
-            <label className="form-span-2">
-              Nuevo stock
-              <input
-                type="number"
-                min={0}
-                value={setValue}
-                onChange={(e) => setSetValue(Number(e.target.value))}
-                required
-              />
-            </label>
-          ) : (
-            <label className="form-span-2">
-              Cantidad
-              <input
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                required
-              />
-            </label>
-          )}
+        {mode === "set" ? (
+          <NumberInput
+            id="adjust-set"
+            label="Nuevo stock"
+            min={0}
+            step={1}
+            value={setValue}
+            onChange={(_, { value }) => setSetValue(value)}
+            onBlur={() => touchField("setValue")}
+            invalid={Boolean(fieldErrors.setValue)}
+            invalidText={fieldErrors.setValue}
+            required
+          />
+        ) : (
+          <NumberInput
+            id="adjust-qty"
+            label="Cantidad"
+            min={1}
+            step={1}
+            value={quantity}
+            onChange={(_, { value }) => setQuantity(value)}
+            onBlur={() => touchField("quantity")}
+            invalid={Boolean(fieldErrors.quantity)}
+            invalidText={fieldErrors.quantity}
+            required
+          />
+        )}
 
-          <label className="form-span-2">
-            Motivo
-            <select
-              value={reason}
-              onChange={(e) => setReason(e.target.value as StockAdjustPayload["reason"])}
-            >
-              {REASONS.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </label>
+        <Select
+          id="adjust-reason"
+          labelText="Motivo"
+          value={reason}
+          onChange={(e) => {
+            setReason(e.target.value as StockAdjustPayload["reason"]);
+            touchField("reason");
+          }}
+          onBlur={() => touchField("reason")}
+          invalid={Boolean(fieldErrors.reason)}
+          invalidText={fieldErrors.reason}
+          required
+        >
+          {REASONS.map((r) => (
+            <SelectItem key={r.value} value={r.value} text={r.label} />
+          ))}
+        </Select>
 
-          <label className="form-span-2">
-            Nota (opcional)
-            <input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Ej. llegada de proveedor, conteo mensual..."
-            />
-          </label>
+        <TextInput
+          id="adjust-note"
+          labelText={reason === "otro" ? "Nota" : "Nota (opcional)"}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          onBlur={() => touchField("note")}
+          invalid={Boolean(fieldErrors.note)}
+          invalidText={fieldErrors.note}
+          placeholder="Ej. llegada de proveedor, conteo mensual…"
+          required={reason === "otro"}
+        />
 
-          <p className="form-span-2 stock-preview">
-            Stock resultante: <strong>{previewStock}</strong>
-          </p>
+        <InlineNotification
+          kind="info"
+          title="Stock resultante"
+          subtitle={`${previewStock} unidades después del ajuste`}
+          lowContrast
+          hideCloseButton
+        />
 
-          {error && (
-            <p className="form-span-2 error-text">{error}</p>
-          )}
-
-          <div className="form-actions form-span-2">
-            <button type="button" className="btn-ghost" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? "Guardando..." : "Confirmar ajuste"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {formError && (
+          <InlineNotification kind="error" title="Error" subtitle={formError} lowContrast hideCloseButton />
+        )}
+      </Stack>
+    </AppModal>
   );
 }

@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { clearSession, getCachedSession, loginOnline } from "../api/auth.js";
-import { fullSync, getPendingCount } from "../api/sync.js";
+import { fullSync, getSyncQueueStats } from "../api/sync.js";
 import { fetchProductsOnline } from "../api/products.js";
 import type { AuthCacheRow } from "../db/dexie.js";
 import { useOnline } from "../hooks/useOnline.js";
@@ -21,6 +21,7 @@ type AuthContextValue = {
   loading: boolean;
   connection: ConnectionState;
   pendingSales: number;
+  failedSales: number;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   sync: () => Promise<void>;
@@ -34,9 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [connection, setConnection] = useState<ConnectionState>("online");
   const [pendingSales, setPendingSales] = useState(0);
+  const [failedSales, setFailedSales] = useState(0);
 
   const refreshPending = useCallback(async () => {
-    setPendingSales(await getPendingCount());
+    const stats = await getSyncQueueStats();
+    setPendingSales(stats.pending);
+    setFailedSales(stats.failed);
   }, []);
 
   const loadSession = useCallback(async () => {
@@ -102,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await clearSession();
     setSession(null);
     setPendingSales(0);
+    setFailedSales(0);
   }, []);
 
   const value = useMemo(
@@ -112,11 +117,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       connection,
       pendingSales,
+      failedSales,
       login,
       logout,
       sync,
     }),
-    [session, loading, connection, pendingSales, login, logout, sync],
+    [session, loading, connection, pendingSales, failedSales, login, logout, sync],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,19 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
+  Button,
+  ContentSwitcher,
+  DataTable,
+  Search,
+  Stack,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@carbon/react";
+import { InventoryManagement, DocumentPdf } from "@carbon/icons-react";
+import {
   adjustProductStock,
   fetchAdminProducts,
   type AdminProduct,
 } from "../../api/admin-products.js";
 import { fetchCategories, type Category } from "../../api/admin-categories.js";
+import { ErrorBanner, TableSkeleton } from "../../components/carbon/PageFeedback.js";
+import {
+  InteractiveTableRow,
+  TABLE_ACTIONS_RAIL,
+} from "../../components/carbon/InteractiveTableRow.js";
 import { EmptyState } from "../../components/EmptyState.js";
 import { StockAdjustModal } from "../../components/StockAdjustModal.js";
 import { StockBadge } from "../../components/StockBadge.js";
 import { useAuth } from "../../context/AuthContext.js";
 import { useToast } from "../../context/ToastContext.js";
 import { usePermissions } from "../../hooks/usePermissions.js";
+import { getErrorMessage } from "../../lib/errors.js";
 
 type StockFilter = "all" | "low" | "out";
+
+const FILTER_OPTIONS = [
+  { i: 0, v: "all" as const, label: (s: { total: number }) => `Todos (${s.total})` },
+  { i: 1, v: "low" as const, label: (s: { low: number }) => `Stock bajo (${s.low})` },
+  { i: 2, v: "out" as const, label: (s: { out: number }) => `Sin stock (${s.out})` },
+];
 
 export function AdminInventoryPage() {
   const { token } = useAuth();
@@ -24,11 +51,13 @@ export function AdminInventoryPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [filter, setFilter] = useState("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+  const [filterIndex, setFilterIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adjustProduct, setAdjustProduct] = useState<AdminProduct | null>(null);
 
   const canEdit = hasPermission("products.edit");
+  const canExport = hasPermission("reports.export");
 
   const load = async () => {
     if (!token) return;
@@ -45,7 +74,7 @@ export function AdminInventoryPage() {
       setProducts(list);
       setCategories(cats);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar inventario");
+      setError(getErrorMessage(err, "Error al cargar inventario"));
     } finally {
       setLoading(false);
     }
@@ -58,11 +87,13 @@ export function AdminInventoryPage() {
   useEffect(() => {
     if (searchParams.get("bajo") === "1") {
       setStockFilter("low");
+      setFilterIndex(1);
       searchParams.delete("bajo");
       setSearchParams(searchParams, { replace: true });
     }
     if (searchParams.get("agotado") === "1") {
       setStockFilter("out");
+      setFilterIndex(2);
       searchParams.delete("agotado");
       setSearchParams(searchParams, { replace: true });
     }
@@ -97,54 +128,81 @@ export function AdminInventoryPage() {
     await load();
   };
 
-  return (
-    <div className="dashboard-page">
-      <div className="filter-chips">
-        <button
-          type="button"
-          className={`chip ${stockFilter === "all" ? "chip-active" : ""}`}
-          onClick={() => setStockFilter("all")}
-        >
-          Todos ({stats.total})
-        </button>
-        <button
-          type="button"
-          className={`chip ${stockFilter === "low" ? "chip-active" : ""}`}
-          onClick={() => setStockFilter("low")}
-        >
-          Stock bajo ({stats.low})
-        </button>
-        <button
-          type="button"
-          className={`chip ${stockFilter === "out" ? "chip-active" : ""}`}
-          onClick={() => setStockFilter("out")}
-        >
-          Sin stock ({stats.out})
-        </button>
-      </div>
+  const handleExportPdf = async () => {
+    if (visible.length === 0) {
+      toastError("No hay productos para exportar");
+      return;
+    }
+    try {
+      const { exportInventoryPdf } = await import("../../lib/pdf-reports.js");
+      exportInventoryPdf(
+        visible.map((p) => ({
+          sku: p.sku,
+          name: p.name,
+          category: p.categoryId ? categoryMap.get(p.categoryId) : undefined,
+          stock: p.stock,
+          minStock: p.minStock,
+          salePrice: p.salePrice,
+        })),
+        {
+          filterLabel:
+            stockFilter === "low"
+              ? "Filtro: Stock bajo"
+              : stockFilter === "out"
+                ? "Filtro: Sin stock"
+                : "Filtro: Todos los productos activos",
+          search: filter.trim() || undefined,
+        },
+      );
+      success("PDF descargado");
+    } catch (err) {
+      toastError(getErrorMessage(err, "Error al generar PDF"));
+    }
+  };
 
-      <form
-        className="search-bar"
-        onSubmit={(e) => {
-          e.preventDefault();
-          load();
+  return (
+    <div className="fortino-admin-page">
+      {canExport && (
+        <div className="fortino-page-actions" style={{ justifyContent: "flex-end", width: "100%" }}>
+          <Button kind="primary" renderIcon={DocumentPdf} onClick={handleExportPdf}>
+            Exportar PDF
+          </Button>
+        </div>
+      )}
+
+      <ContentSwitcher
+        selectedIndex={filterIndex}
+        onChange={({ index }) => {
+          const idx = Number(index ?? 0);
+          setFilterIndex(idx);
+          setStockFilter(FILTER_OPTIONS[idx]?.v ?? "all");
         }}
       >
-        <input
-          type="search"
-          placeholder="Buscar por SKU o nombre..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
-        <button type="submit" className="btn-ghost">
-          Buscar
-        </button>
-      </form>
+        {FILTER_OPTIONS.map((o) => (
+          <Switch key={o.v} name={o.v} text={o.label(stats)} />
+        ))}
+      </ContentSwitcher>
 
-      {error && <p className="error-text">{error}</p>}
+      <div className="fortino-toolbar" style={{ marginTop: "1rem" }}>
+        <div className="fortino-toolbar-grow">
+          <Search
+            id="admin-inventory-search"
+            labelText="Buscar en inventario"
+            placeholder="SKU o nombre…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && load()}
+          />
+        </div>
+        <Button kind="secondary" onClick={() => load()}>
+          Buscar
+        </Button>
+      </div>
+
+      {error && <ErrorBanner message={error} onClose={() => setError(null)} />}
 
       {loading ? (
-        <p style={{ color: "var(--text-muted)" }}>Cargando inventario...</p>
+        <TableSkeleton />
       ) : visible.length === 0 ? (
         <EmptyState
           title="Sin piezas en esta vista"
@@ -155,50 +213,105 @@ export function AdminInventoryPage() {
           }
         />
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Producto</th>
-              <th>Categoría</th>
-              <th>Stock</th>
-              <th>Mín.</th>
-              <th>Estado</th>
-              {canEdit && <th />}
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((p) => (
-              <tr key={p.id}>
-                <td className="sku">{p.sku}</td>
-                <td>{p.name}</td>
-                <td>{p.categoryId ? categoryMap.get(p.categoryId) ?? "—" : "—"}</td>
-                <td
-                  className={
-                    p.stock <= 0 ? "stock-out" : p.stock <= p.minStock ? "stock-low" : ""
-                  }
-                >
-                  {p.stock}
-                </td>
-                <td>{p.minStock}</td>
-                <td>
-                  <StockBadge stock={p.stock} minStock={p.minStock} />
-                </td>
-                {canEdit && (
-                  <td>
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      onClick={() => setAdjustProduct(p)}
+        <div className="fortino-interactive-table">
+        <DataTable
+          rows={visible.map((p) => ({
+            id: p.id,
+            sku: p.sku,
+            name: p.name,
+            category: p.categoryId ? categoryMap.get(p.categoryId) ?? "—" : "—",
+            stock: String(p.stock),
+            min: String(p.minStock),
+            status: p.id,
+          }))}
+          headers={[
+            { key: "sku", header: "SKU" },
+            { key: "name", header: "Producto" },
+            { key: "category", header: "Categoría" },
+            { key: "stock", header: "Stock" },
+            { key: "min", header: "Mínimo" },
+            { key: "status", header: "Estado" },
+            ...(canEdit ? [TABLE_ACTIONS_RAIL] : []),
+          ]}
+        >
+          {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
+            <Table {...getTableProps()}>
+              <TableHead>
+                <TableRow>
+                  {headers.map((h) => (
+                    <TableHeader
+                      {...getHeaderProps({ header: h })}
+                      key={h.key}
+                      className={h.key === "_rail" ? "fortino-row-actions-cell" : undefined}
                     >
-                      Ajustar
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      {h.header}
+                    </TableHeader>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.map((row) => {
+                  const p = visible.find((x) => x.id === row.id)!;
+                  return (
+                    <InteractiveTableRow
+                      key={row.id}
+                      rowProps={getRowProps({ row })}
+                      onOpen={canEdit ? () => setAdjustProduct(p) : undefined}
+                      actions={
+                        canEdit
+                          ? [
+                              {
+                                label: "Ajustar inventario",
+                                icon: InventoryManagement,
+                                onClick: () => setAdjustProduct(p),
+                              },
+                            ]
+                          : []
+                      }
+                      ariaLabel={`Inventario ${p.name}`}
+                    >
+                      {row.cells.map((cell) => {
+                        if (cell.info.header === "status") {
+                          return (
+                            <TableCell key={cell.id}>
+                              <StockBadge stock={p.stock} minStock={p.minStock} />
+                            </TableCell>
+                          );
+                        }
+                        if (cell.info.header === "sku") {
+                          return (
+                            <TableCell key={cell.id} className="mono">
+                              {cell.value}
+                            </TableCell>
+                          );
+                        }
+                        if (cell.info.header === "stock") {
+                          return (
+                            <TableCell key={cell.id}>
+                              <span
+                                className={
+                                  p.stock <= 0
+                                    ? "fortino-text-error"
+                                    : p.stock <= p.minStock
+                                      ? "fortino-text-warning"
+                                      : undefined
+                                }
+                              >
+                                {cell.value}
+                              </span>
+                            </TableCell>
+                          );
+                        }
+                        return <TableCell key={cell.id}>{cell.value}</TableCell>;
+                      })}
+                    </InteractiveTableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </DataTable>
+        </div>
       )}
 
       {adjustProduct && (
@@ -209,7 +322,7 @@ export function AdminInventoryPage() {
             try {
               await handleAdjust(payload);
             } catch (err) {
-              toastError(err instanceof Error ? err.message : "Error al ajustar");
+              toastError(getErrorMessage(err));
               throw err;
             }
           }}

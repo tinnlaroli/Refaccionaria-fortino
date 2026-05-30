@@ -5,6 +5,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db.js";
 import { logAudit } from "../lib/audit.js";
+import { formatZodError, nameZod, passwordZod } from "../lib/field-validators.js";
 import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
@@ -32,14 +33,14 @@ router.post(
   requirePermission("users.manage"),
   async (req, res) => {
     const schema = z.object({
-      email: z.string().email(),
-      password: z.string().min(6),
-      fullName: z.string().min(1),
+      email: z.string().trim().email("Correo inválido"),
+      password: passwordZod(),
+      fullName: nameZod("Nombre completo"),
       roleId: z.string().uuid(),
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.flatten() });
+      res.status(400).json({ error: formatZodError(parsed.error) });
       return;
     }
 

@@ -1,32 +1,46 @@
 import { apiFetch } from "./client.js";
 
+export type DashboardMeta = {
+  role: string;
+  canViewProducts: boolean;
+  canViewSales: boolean;
+  canManageUsers: boolean;
+};
+
 export type DashboardSummary = {
-  products: {
+  meta: DashboardMeta;
+  products?: {
     total: number;
     active: number;
     lowStock: number;
     outOfStock: number;
+    healthy: number;
   };
-  categories: number;
-  users: {
+  categories?: number;
+  users?: {
     total: number;
     active: number;
   };
-  cash: {
+  cash?: {
     openShifts: number;
   };
-  salesToday: {
+  salesToday?: {
     count: number;
     total: number;
   };
-  lowStockItems: Array<{
+  salesTrend7Days?: Array<{
+    date: string;
+    count: number;
+    total: number;
+  }>;
+  lowStockItems?: Array<{
     id: string;
     sku: string;
     name: string;
     stock: number;
     minStock: number;
   }>;
-  recentSales: Array<{
+  recentSales?: Array<{
     id: string;
     total: string;
     soldAt: string;

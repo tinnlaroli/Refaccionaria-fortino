@@ -1,9 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Button,
+  ContentSwitcher,
+  InlineNotification,
+  NumberInput,
+  Stack,
+  Switch,
+} from "@carbon/react";
 import { useAuth } from "../context/AuthContext.js";
 import { useCart } from "../context/CartContext.js";
+import { useShiftStatus } from "../hooks/useShiftStatus.js";
+import { useOnline } from "../hooks/useOnline.js";
 import { getCachedShift } from "../api/cash.js";
 import { createSaleOnline, queueSaleOffline } from "../api/sales.js";
-import { useOnline } from "../hooks/useOnline.js";
+import { getErrorMessage } from "../lib/errors.js";
+import { cashReceived } from "../lib/validation.js";
+import { AppModal } from "./carbon/AppModal.js";
 import { ReceiptModal, type ReceiptData } from "./ReceiptModal.js";
 
 type PaymentMethod = "cash" | "card" | "transfer";
@@ -14,15 +26,38 @@ type Props = {
   onSuccess: () => void;
 };
 
+const PAYMENTS: Array<{ index: number; value: PaymentMethod; label: string }> = [
+  { index: 0, value: "cash", label: "Efectivo" },
+  { index: 1, value: "card", label: "Tarjeta" },
+  { index: 2, value: "transfer", label: "Transferencia" },
+];
+
+function suggestCashAmounts(total: number): number[] {
+  const amounts = new Set<number>([total]);
+  for (const bill of [20, 50, 100, 200, 500, 1000]) {
+    if (bill >= total) amounts.add(bill);
+  }
+  const round50 = Math.ceil(total / 50) * 50;
+  if (round50 >= total) amounts.add(round50);
+  const round100 = Math.ceil(total / 100) * 100;
+  if (round100 >= total) amounts.add(round100);
+  return [...amounts].sort((a, b) => a - b).slice(0, 6);
+}
+
 export function CheckoutModal({ open, onClose, onSuccess }: Props) {
   const { token, sync } = useAuth();
   const { lines, total, clear } = useCart();
   const online = useOnline();
+  const { hasShift, loading: shiftLoading } = useShiftStatus();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
-  const [amountReceived, setAmountReceived] = useState("");
+  const [paymentIndex, setPaymentIndex] = useState(0);
+  const [amountReceived, setAmountReceived] = useState<string | number>("");
+  const [amountError, setAmountError] = useState<string | undefined>();
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+
+  const paymentMethod = PAYMENTS[paymentIndex]?.value ?? "cash";
+  const cashSuggestions = useMemo(() => suggestCashAmounts(total), [total]);
 
   const change = useMemo(() => {
     if (paymentMethod !== "cash") return null;
@@ -33,29 +68,66 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
 
   const canConfirm =
     lines.length > 0 &&
+    hasShift === true &&
     (paymentMethod !== "cash" ||
       (Number(amountReceived) >= total && !Number.isNaN(Number(amountReceived))));
 
-  if (!open && !receipt) return null;
+  useEffect(() => {
+    if (!open) return;
+    setPaymentIndex(0);
+    setAmountReceived("");
+    setAmountError(undefined);
+    setError(null);
+  }, [open]);
+
+  if (receipt) {
+    return (
+      <ReceiptModal
+        receipt={receipt}
+        onClose={() => setReceipt(null)}
+      />
+    );
+  }
 
   const handleConfirm = async () => {
-    if (lines.length === 0 || !canConfirm) return;
+    if (lines.length === 0) {
+      setError("El carrito está vacío");
+      return;
+    }
+
+    if (paymentMethod === "cash") {
+      const err = cashReceived(String(amountReceived), total);
+      if (err) {
+        setAmountError(err);
+        return;
+      }
+    } else if (total <= 0) {
+      setError("El total debe ser mayor a cero");
+      return;
+    }
+
+    if (!canConfirm) return;
+
+    const shift = await getCachedShift();
+    if (!shift?.shiftId) {
+      setError("Abre un turno de caja en Caja antes de cobrar.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     const clientUuid = crypto.randomUUID();
     const soldAt = new Date().toISOString();
-    const shift = await getCachedShift();
     const snapshotItems = [...lines];
-    const received =
-      paymentMethod === "cash" ? Number(amountReceived) : undefined;
+    const received = paymentMethod === "cash" ? Number(amountReceived) : undefined;
 
     try {
       let saleId: string | undefined;
       if (online && token) {
         const result = await createSaleOnline(token, {
           clientUuid,
-          shiftId: shift?.shiftId ?? null,
+          shiftId: shift.shiftId,
           soldAt,
           paymentMethod,
           amountReceived: received,
@@ -66,7 +138,7 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
       } else {
         await queueSaleOffline({
           clientUuid,
-          shiftId: shift?.shiftId ?? null,
+          shiftId: shift.shiftId,
           soldAt,
           paymentMethod,
           amountReceived: received,
@@ -78,7 +150,7 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
       onSuccess();
       onClose();
       setAmountReceived("");
-      setPaymentMethod("cash");
+      setPaymentIndex(0);
       setReceipt({
         id: saleId,
         clientUuid,
@@ -89,87 +161,103 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
         total,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cobrar");
+      setError(getErrorMessage(e, "Error al registrar la venta"));
     } finally {
       setLoading(false);
     }
   };
 
-  if (receipt) {
-    return (
-      <ReceiptModal
-        receipt={receipt}
-        onClose={() => {
-          setReceipt(null);
-        }}
-      />
-    );
-  }
+  const setCashAmount = (amount: number) => {
+    setAmountReceived(amount);
+    setAmountError(cashReceived(String(amount), total));
+  };
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true">
-      <div className="modal-glass">
-        <h2 style={{ marginTop: 0 }}>Confirmar cobro</h2>
-        <p style={{ color: "var(--text-muted)" }}>
-          {lines.length} artículo(s) · {!online && "Se guardará offline"}
-        </p>
-        <p className="checkout-total price">${total.toFixed(2)} MXN</p>
-
-        <div className="payment-methods">
-          {(
-            [
-              ["cash", "Efectivo"],
-              ["card", "Tarjeta"],
-              ["transfer", "Transferencia"],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={`chip ${paymentMethod === value ? "chip-active" : ""}`}
-              onClick={() => setPaymentMethod(value)}
-            >
-              {label}
-            </button>
-          ))}
+    <AppModal
+      open={open}
+      title="Confirmar cobro"
+      subtitle={`${lines.length} artículo(s)${!online ? " · se guardará offline" : ""}`}
+      onClose={onClose}
+      onSubmit={handleConfirm}
+      submitLabel="Cobrar"
+      submitDisabled={!canConfirm}
+      loading={loading}
+    >
+      <Stack gap={5}>
+        <div className="fortino-checkout-amount">
+          <span className="cds--label">Total</span>
+          <p className="fortino-checkout-total price">${total.toFixed(2)} MXN</p>
         </div>
+
+        <ContentSwitcher
+          selectedIndex={paymentIndex}
+          onChange={({ index }) => setPaymentIndex(Number(index ?? 0))}
+        >
+          {PAYMENTS.map((p) => (
+            <Switch key={p.value} name={p.value} text={p.label} />
+          ))}
+        </ContentSwitcher>
 
         {paymentMethod === "cash" && (
-          <label className="checkout-field">
-            Monto recibido
-            <input
-              type="number"
+          <Stack gap={4}>
+            <div className="fortino-cash-quick">
+              <span className="cds--label">Monto rápido</span>
+              <div className="fortino-cash-quick-btns">
+                {cashSuggestions.map((amount) => (
+                  <Button
+                    key={amount}
+                    kind={Number(amountReceived) === amount ? "primary" : "tertiary"}
+                    size="sm"
+                    onClick={() => setCashAmount(amount)}
+                  >
+                    {amount === total ? "Exacto" : `$${amount}`}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <NumberInput
+              id="checkout-amount"
+              label="Monto recibido"
               min={total}
-              step="0.01"
+              step={0.01}
               value={amountReceived}
-              onChange={(e) => setAmountReceived(e.target.value)}
-              placeholder={total.toFixed(2)}
-              autoFocus
+              onChange={(_, { value }) => {
+                setAmountReceived(value);
+                if (value) setAmountError(cashReceived(String(value), total));
+                else setAmountError("Indica el monto recibido");
+              }}
+              onBlur={() => {
+                if (!amountReceived) setAmountError("Indica el monto recibido");
+                else setAmountError(cashReceived(String(amountReceived), total));
+              }}
+              invalid={Boolean(amountError)}
+              invalidText={amountError}
             />
-            {change != null && amountReceived && (
-              <span className="change-hint">
-                Cambio: <strong>${change.toFixed(2)}</strong>
-              </span>
+
+            {change != null && Number(amountReceived) >= total && (
+              <div className="fortino-checkout-change">
+                <span>Cambio</span>
+                <strong className="price">${change.toFixed(2)}</strong>
+              </div>
             )}
-          </label>
+          </Stack>
         )}
 
-        {error && <p className="error-text">{error}</p>}
-        <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem" }}>
-          <button type="button" className="btn-ghost" style={{ flex: 1 }} onClick={onClose}>
-            Cancelar
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            style={{ flex: 1 }}
-            disabled={loading || !canConfirm}
-            onClick={handleConfirm}
-          >
-            {loading ? "Procesando..." : "Cobrar"}
-          </button>
-        </div>
-      </div>
-    </div>
+        {(!shiftLoading && hasShift === false) && (
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            title="Turno de caja requerido"
+            subtitle="Ve a Caja y abre turno antes de registrar la venta."
+            hideCloseButton
+          />
+        )}
+
+        {error && (
+          <InlineNotification kind="error" lowContrast title="No se pudo cobrar" subtitle={error} hideCloseButton />
+        )}
+      </Stack>
+    </AppModal>
   );
 }

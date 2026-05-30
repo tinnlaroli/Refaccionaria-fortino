@@ -1,9 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Button,
+  Form,
+  InlineNotification,
+  PasswordInput,
+  Stack,
+  TextInput,
+  Tile,
+} from "@carbon/react";
 import { getCachedSession } from "../api/auth.js";
 import { useAuth } from "../context/AuthContext.js";
-import { useTheme } from "../hooks/useTheme.js";
-import { ThemeToggle } from "../components/ThemeToggle.js";
+import { ThemeSwitcher } from "../components/ThemeSwitcher.js";
+import { getErrorMessage } from "../lib/errors.js";
+import { email as validateEmail, required } from "../lib/validation.js";
 
 function canAccessAdminPanel(permissions: string[]) {
   return permissions.some((p) =>
@@ -14,66 +24,101 @@ function canAccessAdminPanel(permissions: string[]) {
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  useTheme();
-  const [email, setEmail] = useState("cajero@fortino.local");
-  const [password, setPassword] = useState("cajero123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const validate = () => {
+    const emailErr = validateEmail(email);
+    let passwordErr = required(password, "La contraseña");
+    if (!passwordErr && password.length < 4) {
+      passwordErr = "Contraseña demasiado corta";
+    }
+    const next = { email: emailErr, password: passwordErr };
+    setFieldErrors(next);
+    return !emailErr && !passwordErr;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    if (!validate()) return;
+
+    setLoading(true);
     try {
-      await login(email, password);
+      await login(email.trim(), password);
       const cached = await getCachedSession();
       const goAdmin = cached ? canAccessAdminPanel(cached.user.permissions) : false;
       navigate(goAdmin ? "/app" : "/", { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al iniciar sesión");
+      setError(getErrorMessage(err, "No se pudo iniciar sesión"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-page">
-      <div style={{ position: "absolute", top: 16, right: 16 }}>
-        <ThemeToggle />
+    <div className="fortino-login-page">
+      <div className="fortino-login-header">
+        <ThemeSwitcher showLabel={false} compact />
       </div>
-      <div className="login-card">
-        <h1>Refaccionaria Fortino</h1>
-        <p style={{ color: "var(--text-muted)", margin: 0 }}>Punto de venta</p>
-        <form className="login-form" onSubmit={handleSubmit}>
-          <label>
-            Correo
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="username"
-            />
-          </label>
-          <label>
-            Contraseña
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-          </label>
-          {error && <p className="error-text">{error}</p>}
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Entrando..." : "Iniciar sesión"}
-          </button>
-        </form>
-        <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "1.5rem" }}>
-          Admin: admin@fortino.local / admin123 · Cajero: cajero@fortino.local / cajero123
-        </p>
-      </div>
+      <Tile className="fortino-login-tile">
+        <Stack gap={6}>
+          <div>
+            <h1 className="fortino-heading-display">Refaccionaria Fortino</h1>
+            <p className="fortino-login-subtitle">
+              Punto de venta y control interno
+            </p>
+          </div>
+
+          <Form onSubmit={handleSubmit}>
+            <Stack gap={5}>
+              {error && (
+                <InlineNotification
+                  kind="error"
+                  lowContrast
+                  title="Acceso denegado"
+                  subtitle={error}
+                  hideCloseButton
+                />
+              )}
+              <TextInput
+                id="login-email"
+                labelText="Correo electrónico"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setFieldErrors((f) => ({ ...f, email: validateEmail(email) }))}
+                invalid={Boolean(fieldErrors.email)}
+                invalidText={fieldErrors.email}
+                autoComplete="username"
+                required
+              />
+              <PasswordInput
+                id="login-password"
+                labelText="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onBlur={() =>
+                  setFieldErrors((f) => ({
+                    ...f,
+                    password: required(password, "La contraseña"),
+                  }))
+                }
+                invalid={Boolean(fieldErrors.password)}
+                invalidText={fieldErrors.password}
+                autoComplete="current-password"
+                required
+              />
+              <Button type="submit" kind="primary" disabled={loading} style={{ maxWidth: "100%" }}>
+                {loading ? "Verificando…" : "Iniciar sesión"}
+              </Button>
+            </Stack>
+          </Form>
+        </Stack>
+      </Tile>
     </div>
   );
 }

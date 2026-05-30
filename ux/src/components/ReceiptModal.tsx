@@ -1,5 +1,18 @@
 import { useMemo } from "react";
+import {
+  Button,
+  DataTable,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Stack,
+} from "@carbon/react";
+import { Printer } from "@carbon/icons-react";
 import type { CartLine } from "../types/index.js";
+import { AppModal } from "./carbon/AppModal.js";
 
 export type ReceiptData = {
   id?: string;
@@ -30,83 +43,99 @@ export function ReceiptModal({ receipt, onClose }: Props) {
     return Math.max(0, receipt.amountReceived - receipt.total);
   }, [receipt]);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const headers = [
+    { key: "qty", header: "Cant." },
+    { key: "desc", header: "Descripción" },
+    { key: "amount", header: "Importe" },
+  ];
+
+  const rows = receipt.items.map((line) => ({
+    id: line.sku,
+    qty: String(line.quantity),
+    desc: `${line.sku} — ${line.productName}`,
+    amount: `$${(line.unitPrice * line.quantity).toFixed(2)}`,
+  }));
 
   return (
-    <div className="modal-overlay receipt-overlay" role="dialog" aria-modal="true">
-      <div className="modal-glass receipt-modal">
-        <div className="receipt-print-area">
-          <div className="receipt-header">
-            <strong>Refaccionaria Fortino</strong>
-            <span>Veracruz, México</span>
-            <span className="mono">{new Date(receipt.soldAt).toLocaleString("es-MX")}</span>
-            {receipt.id && <span className="mono">Folio: {receipt.id.slice(0, 8)}</span>}
-          </div>
+    <AppModal
+      open
+      title="Comprobante de venta"
+      subtitle="Refaccionaria Fortino · Veracruz, México"
+      onClose={onClose}
+      hideFooter
+      size="sm"
+    >
+      <div className="receipt-print-area">
+        <Stack gap={4}>
+          <p className="cds--body-compact-01 mono" style={{ margin: 0, color: "var(--cds-text-secondary)" }}>
+            {new Date(receipt.soldAt).toLocaleString("es-MX")}
+            {receipt.id && ` · Folio ${receipt.id.slice(0, 8)}`}
+          </p>
 
-          <table className="receipt-table">
-            <thead>
-              <tr>
-                <th>Cant.</th>
-                <th>Descripción</th>
-                <th>Importe</th>
-              </tr>
-            </thead>
-            <tbody>
-              {receipt.items.map((line) => (
-                <tr key={line.sku}>
-                  <td>{line.quantity}</td>
-                  <td>
-                    <span className="sku">{line.sku}</span>
-                    <br />
-                    {line.productName}
-                  </td>
-                  <td className="price">
-                    ${(line.unitPrice * line.quantity).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable rows={rows} headers={headers} size="sm">
+            {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
+              <Table {...getTableProps()} size="sm">
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => (
+                      <TableHeader {...getHeaderProps({ header })} key={header.key}>
+                        {header.header}
+                      </TableHeader>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow {...getRowProps({ row })} key={row.id}>
+                      {row.cells.map((cell) => (
+                        <TableCell key={cell.id}>{cell.value}</TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DataTable>
 
-          <div className="receipt-totals">
-            <div>
+          <Stack gap={2}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span>Total</span>
               <strong className="price">${receipt.total.toFixed(2)} MXN</strong>
             </div>
-            <div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span>Pago</span>
               <strong>{PAYMENT_LABELS[receipt.paymentMethod]}</strong>
             </div>
             {receipt.amountReceived != null && (
               <>
-                <div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span>Recibido</span>
                   <strong>${receipt.amountReceived.toFixed(2)}</strong>
                 </div>
                 {change != null && (
-                  <div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span>Cambio</span>
                     <strong>${change.toFixed(2)}</strong>
                   </div>
                 )}
               </>
             )}
-          </div>
+          </Stack>
 
-          <p className="receipt-footer">Gracias por su compra</p>
-        </div>
-
-        <div className="receipt-actions">
-          <button type="button" className="btn-ghost" onClick={onClose}>
-            Cerrar
-          </button>
-          <button type="button" className="btn-primary" onClick={handlePrint}>
-            Imprimir ticket
-          </button>
-        </div>
+          <p className="cds--body-compact-01" style={{ textAlign: "center", color: "var(--cds-text-secondary)" }}>
+            Gracias por su compra
+          </p>
+        </Stack>
       </div>
-    </div>
+
+      <Stack orientation="horizontal" gap={3} className="receipt-no-print" style={{ marginTop: "1.5rem" }}>
+        <Button kind="secondary" onClick={onClose}>
+          Cerrar
+        </Button>
+        <Button kind="primary" renderIcon={Printer} onClick={() => window.print()}>
+          Imprimir
+        </Button>
+      </Stack>
+    </AppModal>
   );
 }

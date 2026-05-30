@@ -53,6 +53,11 @@ export async function pullCatalog(token: string) {
 }
 
 export async function pushPendingSales(token: string) {
+  await db.transactionQueue
+    .where("status")
+    .equals("error")
+    .modify({ status: "pending", error: undefined });
+
   const pending = await db.transactionQueue
     .where("status")
     .equals("pending")
@@ -109,4 +114,13 @@ export async function fullSync(token: string) {
 
 export async function getPendingCount() {
   return db.transactionQueue.where("status").equals("pending").count();
+}
+
+export async function getFailedSyncCount() {
+  return db.transactionQueue.where("status").equals("error").count();
+}
+
+export async function getSyncQueueStats() {
+  const [pending, failed] = await Promise.all([getPendingCount(), getFailedSyncCount()]);
+  return { pending, failed };
 }

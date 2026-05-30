@@ -4,19 +4,27 @@ import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db.js";
 import { logAudit } from "../lib/audit.js";
+import {
+  descriptionZod,
+  formatZodError,
+  moneyZod,
+  nameZod,
+  nonNegativeIntZod,
+  skuZod,
+} from "../lib/field-validators.js";
 import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
 
 const productSchema = z.object({
-  sku: z.string().min(1),
-  name: z.string().min(1),
-  description: z.string().optional(),
+  sku: skuZod(),
+  name: nameZod("Nombre del producto"),
+  description: descriptionZod(),
   categoryId: z.string().uuid().optional().nullable(),
-  purchasePrice: z.string().or(z.number()),
-  salePrice: z.string().or(z.number()),
-  stock: z.number().int().min(0).optional(),
-  minStock: z.number().int().min(0).optional(),
+  purchasePrice: moneyZod("Precio de compra"),
+  salePrice: moneyZod("Precio de venta"),
+  stock: nonNegativeIntZod("Stock").optional(),
+  minStock: nonNegativeIntZod("Stock mínimo").optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -86,7 +94,7 @@ router.post(
   async (req, res) => {
     const parsed = productSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.flatten() });
+      res.status(400).json({ error: formatZodError(parsed.error) });
       return;
     }
 
@@ -120,7 +128,7 @@ router.patch(
   async (req, res) => {
     const parsed = productSchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.flatten() });
+      res.status(400).json({ error: formatZodError(parsed.error) });
       return;
     }
 
@@ -167,14 +175,24 @@ router.post(
   requireAuth,
   requirePermission("products.edit"),
   async (req, res) => {
-    const adjustSchema = z.object({
-      delta: z.number().int().refine((n) => n !== 0, "Sin cambio de stock"),
-      reason: z.enum(["entrada", "merma", "devolucion", "conteo", "otro"]),
-      note: z.string().max(500).optional(),
-    });
+    const adjustSchema = z
+      .object({
+        delta: z.number().int().refine((n) => n !== 0, "Sin cambio de stock"),
+        reason: z.enum(["entrada", "merma", "devolucion", "conteo", "otro"]),
+        note: z.string().trim().max(500).optional(),
+      })
+      .superRefine((data, ctx) => {
+        if (data.reason === "otro" && !data.note?.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "La nota es obligatoria cuando el motivo es Otro",
+            path: ["note"],
+          });
+        }
+      });
     const parsed = adjustSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.flatten() });
+      res.status(400).json({ error: formatZodError(parsed.error) });
       return;
     }
 

@@ -1,11 +1,68 @@
 import { cashMovements, cashShifts, sales, users } from "@refaccionaria/db";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db.js";
+import {
+  computeExpectedCash,
+  summarizeMovements,
+  summarizeShiftSales,
+} from "../lib/cash-shift-math.js";
 import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
+
+async function loadShiftSales(shiftId) {
+  return db
+    .select({
+      total: sales.total,
+      paymentMethod: sales.paymentMethod,
+      status: sales.status,
+    })
+    .from(sales)
+    .where(eq(sales.shiftId, shiftId));
+}
+
+async function buildShiftSummary(shift) {
+  const salesRows = await loadShiftSales(shift.id);
+  const salesSummary = summarizeShiftSales(salesRows);
+
+  const movements = await db
+    .select({
+      id: cashMovements.id,
+      type: cashMovements.type,
+      amount: cashMovements.amount,
+      note: cashMovements.note,
+      createdAt: cashMovements.createdAt,
+      createdByName: users.fullName,
+    })
+    .from(cashMovements)
+    .leftJoin(users, eq(cashMovements.createdBy, users.id))
+    .where(eq(cashMovements.shiftId, shift.id))
+    .orderBy(desc(cashMovements.createdAt));
+
+  const rawMovements = await db
+    .select()
+    .from(cashMovements)
+    .where(eq(cashMovements.shiftId, shift.id));
+
+  const { movementNet, incomeTotal, expenseTotal } = summarizeMovements(rawMovements);
+  const expectedCash = computeExpectedCash(
+    shift.openingCash,
+    salesSummary.cashSalesTotal,
+    movementNet,
+  );
+
+  return {
+    shift,
+    ...salesSummary,
+    movementNet,
+    incomeTotal,
+    expenseTotal,
+    expectedCash,
+    movements,
+  };
+}
 
 router.post(
   "/shifts/open",
@@ -76,45 +133,7 @@ router.get(
       return;
     }
 
-    const [{ salesTotal, salesCount }] = await db
-      .select({
-        salesTotal: sql`COALESCE(SUM(CASE WHEN ${sales.status} = 'completed' THEN ${sales.total} ELSE 0 END), 0)`,
-        salesCount: sql`COUNT(*) FILTER (WHERE ${sales.status} = 'completed')`,
-      })
-      .from(sales)
-      .where(eq(sales.shiftId, shift.id));
-
-    const movements = await db
-      .select({
-        id: cashMovements.id,
-        type: cashMovements.type,
-        amount: cashMovements.amount,
-        note: cashMovements.note,
-        createdAt: cashMovements.createdAt,
-        createdByName: users.fullName,
-      })
-      .from(cashMovements)
-      .leftJoin(users, eq(cashMovements.createdBy, users.id))
-      .where(eq(cashMovements.shiftId, shift.id))
-      .orderBy(desc(cashMovements.createdAt));
-
-    let movementNet = 0;
-    for (const m of movements) {
-      const amount = Number(m.amount);
-      movementNet += m.type === "income" ? amount : -amount;
-    }
-
-    const expectedCash =
-      Number(shift.openingCash) + Number(salesTotal ?? 0) + movementNet;
-
-    res.json({
-      shift,
-      salesTotal: Number(salesTotal ?? 0),
-      salesCount: Number(salesCount ?? 0),
-      movementNet,
-      expectedCash,
-      movements,
-    });
+    res.json(await buildShiftSummary(shift));
   },
 );
 
@@ -143,26 +162,8 @@ router.post(
       return;
     }
 
-    const [{ salesTotal }] = await db
-      .select({
-        salesTotal: sql`COALESCE(SUM(CASE WHEN ${sales.status} = 'completed' THEN ${sales.total} ELSE 0 END), 0)`,
-      })
-      .from(sales)
-      .where(eq(sales.shiftId, shift.id));
-
-    const movements = await db
-      .select()
-      .from(cashMovements)
-      .where(eq(cashMovements.shiftId, shift.id));
-
-    let movementNet = 0;
-    for (const m of movements) {
-      const amount = Number(m.amount);
-      movementNet += m.type === "income" ? amount : -amount;
-    }
-
-    const expected =
-      Number(shift.openingCash) + Number(salesTotal ?? 0) + movementNet;
+    const summary = await buildShiftSummary(shift);
+    const expected = summary.expectedCash;
 
     const [closed] = await db
       .update(cashShifts)
@@ -177,10 +178,8 @@ router.post(
 
     res.json({
       ...closed,
-      salesTotal: Number(salesTotal ?? 0),
-      movementNet,
-      difference:
-        Number(parsed.data.closingCashDeclared) - expected,
+      ...summary,
+      difference: Number(parsed.data.closingCashDeclared) - expected,
     });
   },
 );

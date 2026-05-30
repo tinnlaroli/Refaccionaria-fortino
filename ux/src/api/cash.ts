@@ -12,6 +12,8 @@ export async function getCurrentShift(token: string) {
       shiftId: shift.id,
       openingCash: shift.openingCash,
     });
+  } else {
+    await db.shiftCache.delete("current");
   }
   return shift;
 }
@@ -71,7 +73,12 @@ export type ShiftSummary = {
   shift: CashShift;
   salesTotal: number;
   salesCount: number;
+  cashSalesTotal: number;
+  cardSalesTotal: number;
+  transferSalesTotal: number;
   movementNet: number;
+  incomeTotal: number;
+  expenseTotal: number;
   expectedCash: number;
   movements: Array<{
     id: string;

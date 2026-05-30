@@ -1,4 +1,15 @@
-﻿services:
+﻿# Refaccionaria Fortino — stack unificado
+#
+# Producción (build estático + nginx):
+#   docker compose up -d --build
+#
+# Desarrollo (recarga automática, sin rebuild por cada edit):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build   # primera vez o tras cambiar package.json
+#
+# URLs: http://localhost:8080  ·  POS http://localhost:8080/pos/  ·  Admin http://localhost:8080/pos/app
+
+services:
   postgres:
     image: postgres:16
     container_name: refaccionaria-postgres

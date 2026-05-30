@@ -1,63 +1,46 @@
 import { useAuth } from "../context/AuthContext.js";
+import { InlineNotification, Button } from "@carbon/react";
 
 export function ConnectionBanner() {
-  const { connection, pendingSales, sync } = useAuth();
+  const { connection, pendingSales, failedSales, sync } = useAuth();
 
-  if (connection === "online" && pendingSales === 0) return null;
+  if (connection === "online" && pendingSales === 0 && failedSales === 0) return null;
 
-  const messages = {
-    offline: {
-      text: "Modo offline — las ventas se guardan localmente",
-      action: null,
-    },
-    syncing: {
-      text: "Sincronizando con el servidor...",
-      action: null,
-    },
-    online: {
-      text: `${pendingSales} venta(s) pendiente(s) de sincronizar`,
-      action: "Sincronizar ahora",
-    },
-  };
-
-  const msg =
+  const kind =
     connection === "offline"
-      ? messages.offline
-      : connection === "syncing"
-        ? messages.syncing
-        : messages.online;
+      ? "warning"
+      : failedSales > 0
+        ? "error"
+        : connection === "syncing"
+          ? "info"
+          : "success";
+
+  let text: string;
+  if (connection === "offline") {
+    text = "Modo sin conexión — las ventas se guardan localmente hasta sincronizar.";
+  } else if (connection === "syncing") {
+    text = "Sincronizando con el servidor…";
+  } else if (failedSales > 0 && pendingSales > 0) {
+    text = `${pendingSales} venta(s) pendiente(s) y ${failedSales} con error de sincronización.`;
+  } else if (failedSales > 0) {
+    text = `${failedSales} venta(s) no se pudieron sincronizar. Revisa Caja o contacta soporte.`;
+  } else {
+    text = `${pendingSales} venta(s) pendiente(s) de sincronizar.`;
+  }
 
   return (
-    <div
-      className="connection-banner"
-      role="status"
-      style={{
-        padding: "0.5rem 1rem",
-        background:
-          connection === "offline"
-            ? "var(--warning)"
-            : connection === "syncing"
-              ? "var(--accent)"
-              : "var(--success)",
-        color: "#1c1917",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "1rem",
-        fontSize: "0.875rem",
-        fontWeight: 600,
-      }}
-    >
-      <span>{msg.text}</span>
-      {msg.action && (
-        <button
-          type="button"
-          className="btn-ghost"
-          style={{ padding: "0.25rem 0.75rem", fontSize: "0.8rem" }}
-          onClick={() => sync()}
-        >
-          {msg.action}
-        </button>
+    <div className={`fortino-connection-strip fortino-connection-strip--${kind}`}>
+      <InlineNotification
+        kind={kind === "error" ? "error" : kind}
+        lowContrast
+        title="Estado de conexión"
+        subtitle={text}
+        hideCloseButton
+      />
+      {connection === "online" && (pendingSales > 0 || failedSales > 0) && (
+        <Button kind="primary" size="sm" onClick={() => sync()}>
+          Sincronizar ahora
+        </Button>
       )}
     </div>
   );

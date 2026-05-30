@@ -7,9 +7,15 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5174,
+    watch: process.env.CHOKIDAR_USEPOLLING
+      ? { usePolling: true, interval: 1000 }
+      : undefined,
+    hmr: process.env.VITE_HMR_CLIENT_PORT
+      ? { clientPort: Number(process.env.VITE_HMR_CLIENT_PORT) }
+      : undefined,
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: process.env.VITE_API_URL ?? "http://localhost:3000",
         changeOrigin: true,
       },
     },
