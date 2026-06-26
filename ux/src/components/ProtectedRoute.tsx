@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { InlineLoading } from "@carbon/react";
+import { Spinner } from "@heroui/react";
 import { useAuth } from "../context/AuthContext.js";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -7,8 +7,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div style={{ padding: "3rem", display: "flex", justifyContent: "center" }}>
-        <InlineLoading description="Verificando sesión…" />
+      <div className="flex justify-center p-12">
+        <Spinner size="lg" aria-label="Verificando sesión…" />
       </div>
     );
   }

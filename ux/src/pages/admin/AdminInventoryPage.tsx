@@ -1,32 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Button,
-  ContentSwitcher,
-  DataTable,
-  Search,
-  Stack,
-  Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@carbon/react";
-import { InventoryManagement, DocumentPdf } from "@carbon/icons-react";
+import { Button, SearchField, Table, Tabs } from "@heroui/react";
+import { FileText, Package } from "lucide-react";
 import {
   adjustProductStock,
   fetchAdminProducts,
   type AdminProduct,
 } from "../../api/admin-products.js";
 import { fetchCategories, type Category } from "../../api/admin-categories.js";
-import { ErrorBanner, TableSkeleton } from "../../components/carbon/PageFeedback.js";
-import {
-  InteractiveTableRow,
-  TABLE_ACTIONS_RAIL,
-} from "../../components/carbon/InteractiveTableRow.js";
+import { ErrorBanner, TableSkeleton } from "../../components/ui/PageFeedback.js";
 import { EmptyState } from "../../components/EmptyState.js";
+import { InteractiveTableRow } from "../../components/ui/InteractiveTableRow.js";
+import { DataPanel } from "../../components/ui/DataPanel.js";
+import { PageToolbar, PageToolbarGroup } from "../../components/ui/PageToolbar.js";
 import { StockAdjustModal } from "../../components/StockAdjustModal.js";
 import { StockBadge } from "../../components/StockBadge.js";
 import { useAuth } from "../../context/AuthContext.js";
@@ -35,12 +21,6 @@ import { usePermissions } from "../../hooks/usePermissions.js";
 import { getErrorMessage } from "../../lib/errors.js";
 
 type StockFilter = "all" | "low" | "out";
-
-const FILTER_OPTIONS = [
-  { i: 0, v: "all" as const, label: (s: { total: number }) => `Todos (${s.total})` },
-  { i: 1, v: "low" as const, label: (s: { low: number }) => `Stock bajo (${s.low})` },
-  { i: 2, v: "out" as const, label: (s: { out: number }) => `Sin stock (${s.out})` },
-];
 
 export function AdminInventoryPage() {
   const { token } = useAuth();
@@ -51,7 +31,6 @@ export function AdminInventoryPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [filter, setFilter] = useState("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
-  const [filterIndex, setFilterIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adjustProduct, setAdjustProduct] = useState<AdminProduct | null>(null);
@@ -87,13 +66,11 @@ export function AdminInventoryPage() {
   useEffect(() => {
     if (searchParams.get("bajo") === "1") {
       setStockFilter("low");
-      setFilterIndex(1);
       searchParams.delete("bajo");
       setSearchParams(searchParams, { replace: true });
     }
     if (searchParams.get("agotado") === "1") {
       setStockFilter("out");
-      setFilterIndex(2);
       searchParams.delete("agotado");
       setSearchParams(searchParams, { replace: true });
     }
@@ -162,42 +139,58 @@ export function AdminInventoryPage() {
 
   return (
     <div className="fortino-admin-page">
-      {canExport && (
-        <div className="fortino-page-actions" style={{ justifyContent: "flex-end", width: "100%" }}>
-          <Button kind="primary" renderIcon={DocumentPdf} onClick={handleExportPdf}>
-            Exportar PDF
-          </Button>
-        </div>
-      )}
+      <PageToolbar>
+        <PageToolbarGroup grow>
+          <p className="m-0 text-sm text-muted">
+            {visible.length} pieza(s) · {stats.low} bajo · {stats.out} agotadas
+          </p>
+        </PageToolbarGroup>
+        {canExport && (
+          <PageToolbarGroup>
+            <Button variant="primary" onPress={handleExportPdf}>
+              <FileText size={16} />
+              Exportar PDF
+            </Button>
+          </PageToolbarGroup>
+        )}
+      </PageToolbar>
 
-      <ContentSwitcher
-        selectedIndex={filterIndex}
-        onChange={({ index }) => {
-          const idx = Number(index ?? 0);
-          setFilterIndex(idx);
-          setStockFilter(FILTER_OPTIONS[idx]?.v ?? "all");
-        }}
-      >
-        {FILTER_OPTIONS.map((o) => (
-          <Switch key={o.v} name={o.v} text={o.label(stats)} />
-        ))}
-      </ContentSwitcher>
+      <DataPanel title="Existencias" description="Filtros y búsqueda de inventario" compact>
+        <div className="flex flex-col gap-4 px-4 py-4 md:px-5">
+          <Tabs
+            selectedKey={stockFilter}
+            onSelectionChange={(key) => setStockFilter(key as StockFilter)}
+          >
+            <Tabs.ListContainer>
+              <Tabs.List aria-label="Filtro de stock">
+                <Tabs.Tab id="all">Todos ({stats.total})</Tabs.Tab>
+                <Tabs.Tab id="low">Stock bajo ({stats.low})</Tabs.Tab>
+                <Tabs.Tab id="out">Sin stock ({stats.out})</Tabs.Tab>
+              </Tabs.List>
+            </Tabs.ListContainer>
+          </Tabs>
 
-      <div className="fortino-toolbar" style={{ marginTop: "1rem" }}>
-        <div className="fortino-toolbar-grow">
-          <Search
-            id="admin-inventory-search"
-            labelText="Buscar en inventario"
-            placeholder="SKU o nombre…"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && load()}
-          />
+          <div className="fortino-toolbar !mb-0 !border-0 !p-0">
+            <SearchField
+              aria-label="Buscar en inventario"
+              value={filter}
+              onChange={setFilter}
+              className="fortino-toolbar-grow"
+            >
+              <SearchField.Group>
+                <SearchField.Input
+                  id="admin-inventory-search"
+                  placeholder="SKU o nombre…"
+                  onKeyDown={(e) => e.key === "Enter" && load()}
+                />
+              </SearchField.Group>
+            </SearchField>
+            <Button variant="secondary" onPress={() => load()}>
+              Buscar
+            </Button>
+          </div>
         </div>
-        <Button kind="secondary" onClick={() => load()}>
-          Buscar
-        </Button>
-      </div>
+      </DataPanel>
 
       {error && <ErrorBanner message={error} onClose={() => setError(null)} />}
 
@@ -213,56 +206,33 @@ export function AdminInventoryPage() {
           }
         />
       ) : (
-        <div className="fortino-interactive-table">
-        <DataTable
-          rows={visible.map((p) => ({
-            id: p.id,
-            sku: p.sku,
-            name: p.name,
-            category: p.categoryId ? categoryMap.get(p.categoryId) ?? "—" : "—",
-            stock: String(p.stock),
-            min: String(p.minStock),
-            status: p.id,
-          }))}
-          headers={[
-            { key: "sku", header: "SKU" },
-            { key: "name", header: "Producto" },
-            { key: "category", header: "Categoría" },
-            { key: "stock", header: "Stock" },
-            { key: "min", header: "Mínimo" },
-            { key: "status", header: "Estado" },
-            ...(canEdit ? [TABLE_ACTIONS_RAIL] : []),
-          ]}
-        >
-          {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
-            <Table {...getTableProps()}>
-              <TableHead>
-                <TableRow>
-                  {headers.map((h) => (
-                    <TableHeader
-                      {...getHeaderProps({ header: h })}
-                      key={h.key}
-                      className={h.key === "_rail" ? "fortino-row-actions-cell" : undefined}
-                    >
-                      {h.header}
-                    </TableHeader>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => {
-                  const p = visible.find((x) => x.id === row.id)!;
-                  return (
+        <DataPanel title="Listado de inventario" description={`${visible.length} producto(s)`} compact>
+          <div className="fortino-interactive-table">
+          <Table aria-label="Inventario">
+            <Table.ScrollContainer>
+              <Table.Content>
+                <Table.Header>
+                  <Table.Column isRowHeader>SKU</Table.Column>
+                  <Table.Column>Producto</Table.Column>
+                  <Table.Column>Categoría</Table.Column>
+                  <Table.Column>Stock</Table.Column>
+                  <Table.Column>Mínimo</Table.Column>
+                  <Table.Column>Estado</Table.Column>
+                  {canEdit && <Table.Column className="fortino-row-actions-cell" />}
+                </Table.Header>
+                <Table.Body>
+                  {visible.map((p) => (
                     <InteractiveTableRow
-                      key={row.id}
-                      rowProps={getRowProps({ row })}
+                      key={p.id}
+                      id={p.id}
+                      reserveActionsColumn={canEdit}
                       onOpen={canEdit ? () => setAdjustProduct(p) : undefined}
                       actions={
                         canEdit
                           ? [
                               {
                                 label: "Ajustar inventario",
-                                icon: InventoryManagement,
+                                icon: Package,
                                 onClick: () => setAdjustProduct(p),
                               },
                             ]
@@ -270,48 +240,36 @@ export function AdminInventoryPage() {
                       }
                       ariaLabel={`Inventario ${p.name}`}
                     >
-                      {row.cells.map((cell) => {
-                        if (cell.info.header === "status") {
-                          return (
-                            <TableCell key={cell.id}>
-                              <StockBadge stock={p.stock} minStock={p.minStock} />
-                            </TableCell>
-                          );
-                        }
-                        if (cell.info.header === "sku") {
-                          return (
-                            <TableCell key={cell.id} className="mono">
-                              {cell.value}
-                            </TableCell>
-                          );
-                        }
-                        if (cell.info.header === "stock") {
-                          return (
-                            <TableCell key={cell.id}>
-                              <span
-                                className={
-                                  p.stock <= 0
-                                    ? "fortino-text-error"
-                                    : p.stock <= p.minStock
-                                      ? "fortino-text-warning"
-                                      : undefined
-                                }
-                              >
-                                {cell.value}
-                              </span>
-                            </TableCell>
-                          );
-                        }
-                        return <TableCell key={cell.id}>{cell.value}</TableCell>;
-                      })}
+                      <Table.Cell className="mono">{p.sku}</Table.Cell>
+                      <Table.Cell>{p.name}</Table.Cell>
+                      <Table.Cell>
+                        {p.categoryId ? categoryMap.get(p.categoryId) ?? "—" : "—"}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <span
+                          className={
+                            p.stock <= 0
+                              ? "fortino-text-error"
+                              : p.stock <= p.minStock
+                                ? "fortino-text-warning"
+                                : undefined
+                          }
+                        >
+                          {p.stock}
+                        </span>
+                      </Table.Cell>
+                      <Table.Cell>{p.minStock}</Table.Cell>
+                      <Table.Cell>
+                        <StockBadge stock={p.stock} minStock={p.minStock} />
+                      </Table.Cell>
                     </InteractiveTableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </DataTable>
+                  ))}
+                </Table.Body>
+              </Table.Content>
+            </Table.ScrollContainer>
+          </Table>
         </div>
+        </DataPanel>
       )}
 
       {adjustProduct && (

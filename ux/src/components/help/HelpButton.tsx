@@ -1,45 +1,34 @@
-import { useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { Button } from "@carbon/react";
-import { Help } from "@carbon/icons-react";
-import {
-  MODULE_WALKTHROUGHS,
-  resolveWalkthroughKey,
-} from "../../config/walkthroughs.js";
-import { ModuleWalkthroughModal } from "./ModuleWalkthroughModal.js";
+import { Button } from "@heroui/react";
+import { HelpCircle } from "lucide-react";
+import { useHelp } from "../../context/HelpContext.js";
 
 type Props = {
   size?: "sm" | "md" | "lg";
-  kind?: "ghost" | "tertiary" | "secondary";
+  variant?: "ghost" | "secondary" | "tertiary";
   className?: string;
+  /** Etiqueta visible junto al icono */
+  showLabel?: boolean;
 };
 
-export function HelpButton({ size = "sm", kind = "ghost", className }: Props) {
-  const { pathname } = useLocation();
-  const [open, setOpen] = useState(false);
-
-  const walkthroughKey = useMemo(() => resolveWalkthroughKey(pathname), [pathname]);
-  const walkthrough = MODULE_WALKTHROUGHS[walkthroughKey];
-
-  if (!walkthrough) return null;
+export function HelpButton({
+  size = "sm",
+  variant = "secondary",
+  className,
+  showLabel = true,
+}: Props) {
+  const { walkthrough, openHelp } = useHelp();
 
   return (
-    <>
-      <Button
-        kind={kind}
-        size={size}
-        className={className}
-        renderIcon={Help}
-        iconDescription="Abrir guía del módulo"
-        onClick={() => setOpen(true)}
-      >
-        Ayuda
-      </Button>
-      <ModuleWalkthroughModal
-        open={open}
-        walkthrough={walkthrough}
-        onClose={() => setOpen(false)}
-      />
-    </>
+    <Button
+      variant={variant}
+      size={size}
+      className={`fortino-help-btn ${className ?? ""}`.trim()}
+      aria-label={`Abrir guía: ${walkthrough.title}`}
+      title={`Ayuda: ${walkthrough.title}`}
+      onPress={openHelp}
+    >
+      <HelpCircle size={size === "lg" ? 20 : 16} aria-hidden />
+      {showLabel && <span>Ayuda</span>}
+    </Button>
   );
 }

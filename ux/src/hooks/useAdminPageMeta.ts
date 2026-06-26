@@ -18,6 +18,26 @@ const PAGE_META: Record<string, { title: string; description: string; step?: str
     description: "Organiza el catálogo por tipo de refacción.",
     step: "2 · Catálogo",
   },
+  "/app/marcas": {
+    title: "Marcas",
+    description: "Fabricantes y líneas reutilizables en productos.",
+    step: "2 · Catálogo",
+  },
+  "/app/proveedores": {
+    title: "Proveedores",
+    description: "Registra quién te surte refacciones.",
+    step: "2 · Catálogo",
+  },
+  "/app/compras": {
+    title: "Compras",
+    description: "Entrada de mercancía ligada a proveedor e inventario.",
+    step: "3 · Existencias",
+  },
+  "/app/imagenes": {
+    title: "Biblioteca de imágenes",
+    description: "Sube, busca y asigna fotos a productos.",
+    step: "2 · Catálogo",
+  },
   "/app/inventario": {
     title: "Inventario",
     description: "Revisa existencias, alertas y ajusta stock.",

@@ -10,6 +10,13 @@ export type AdminProduct = {
   salePrice: string;
   stock: number;
   minStock: number;
+  unitOfMeasure?: string;
+  brandId?: string | null;
+  brandName?: string | null;
+  presentation?: string | null;
+  vehicleCompatibility?: string | null;
+  primaryMediaId?: string | null;
+  imageUrl?: string | null;
   isActive: boolean;
   updatedAt: string;
 };
@@ -23,6 +30,12 @@ export type ProductInput = {
   salePrice: string | number;
   stock?: number;
   minStock?: number;
+  unitOfMeasure?: string;
+  brandId?: string | null;
+  brandName?: string | null;
+  presentation?: string | null;
+  vehicleCompatibility?: string | null;
+  primaryMediaId?: string | null;
   isActive?: boolean;
 };
 

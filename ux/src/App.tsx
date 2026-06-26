@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { HelpProvider } from "./context/HelpContext.js";
 import { AuthProvider } from "./context/AuthContext.js";
 import { CartProvider } from "./context/CartContext.js";
 import { ThemeProvider } from "./context/ThemeContext.js";
@@ -12,6 +13,7 @@ import { DashboardLayout } from "./components/dashboard/DashboardLayout.js";
 import { LoginPage } from "./pages/LoginPage.js";
 import { PosPage } from "./pages/PosPage.js";
 import { InventoryPage } from "./pages/InventoryPage.js";
+import { SyncPage } from "./pages/SyncPage.js";
 import { CashPage } from "./pages/CashPage.js";
 import { DashboardPage } from "./pages/admin/DashboardPage.js";
 import { ProductsPage } from "./pages/admin/ProductsPage.js";
@@ -20,6 +22,10 @@ import { MovementsPage } from "./pages/admin/MovementsPage.js";
 import { CategoriesPage } from "./pages/admin/CategoriesPage.js";
 import { EmployeesPage } from "./pages/admin/EmployeesPage.js";
 import { SalesPage } from "./pages/admin/SalesPage.js";
+import { SuppliersPage } from "./pages/admin/SuppliersPage.js";
+import { BrandsPage } from "./pages/admin/BrandsPage.js";
+import { PurchasesPage } from "./pages/admin/PurchasesPage.js";
+import { MediaLibraryPage } from "./pages/admin/MediaLibraryPage.js";
 
 export default function App() {
   return (
@@ -28,6 +34,7 @@ export default function App() {
         <ErrorBoundary>
           <ToastProvider>
             <AuthProvider>
+              <HelpProvider>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route
@@ -43,6 +50,7 @@ export default function App() {
                   <Route index element={<PosPage />} />
                   <Route path="inventario" element={<InventoryPage />} />
                   <Route path="caja" element={<CashPage />} />
+                  <Route path="sincronizacion" element={<SyncPage />} />
                 </Route>
                 <Route
                   path="/app"
@@ -68,6 +76,38 @@ export default function App() {
                     element={
                       <PermissionRoute permission="products.view">
                         <CategoriesPage />
+                      </PermissionRoute>
+                    }
+                  />
+                  <Route
+                    path="marcas"
+                    element={
+                      <PermissionRoute permission="brands.view">
+                        <BrandsPage />
+                      </PermissionRoute>
+                    }
+                  />
+                  <Route
+                    path="proveedores"
+                    element={
+                      <PermissionRoute permission="suppliers.view">
+                        <SuppliersPage />
+                      </PermissionRoute>
+                    }
+                  />
+                  <Route
+                    path="compras"
+                    element={
+                      <PermissionRoute permission="purchases.view">
+                        <PurchasesPage />
+                      </PermissionRoute>
+                    }
+                  />
+                  <Route
+                    path="imagenes"
+                    element={
+                      <PermissionRoute permission="media.view">
+                        <MediaLibraryPage />
                       </PermissionRoute>
                     }
                   />
@@ -106,6 +146,7 @@ export default function App() {
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
+              </HelpProvider>
             </AuthProvider>
           </ToastProvider>
         </ErrorBoundary>

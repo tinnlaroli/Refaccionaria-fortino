@@ -2,9 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import { registerSW } from "virtual:pwa-register";
-import { applyCarbonTheme, type AppTheme } from "./context/ThemeContext.js";
+import { applyTheme, type AppTheme } from "./context/ThemeContext.js";
 import App from "./App";
-import "./styles/carbon-app.scss";
+import "./index.css";
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 if (sentryDsn) {
@@ -24,9 +24,9 @@ if (sentryDsn) {
         : window.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
           : "light";
-    applyCarbonTheme(theme);
+    applyTheme(theme);
   } catch {
-    applyCarbonTheme("light");
+    applyTheme("light");
   }
 })();
 

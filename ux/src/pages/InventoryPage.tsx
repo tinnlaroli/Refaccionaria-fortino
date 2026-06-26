@@ -1,21 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Button,
-  ContentSwitcher,
-  DataTable,
-  Search,
-  Stack,
-  Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@carbon/react";
-import { DocumentPdf } from "@carbon/icons-react";
+import { Button, SearchField, Table, Tabs } from "@heroui/react";
+import { FileText } from "lucide-react";
 import { db } from "../db/dexie.js";
 import { EmptyState } from "../components/EmptyState.js";
+import { DataPanel } from "../components/ui/DataPanel.js";
+import { PageToolbar, PageToolbarGroup } from "../components/ui/PageToolbar.js";
 import { StockBadge } from "../components/StockBadge.js";
 import { useToast } from "../context/ToastContext.js";
 import { getErrorMessage } from "../lib/errors.js";
@@ -23,18 +12,11 @@ import type { Product } from "../types/index.js";
 
 type StockFilter = "all" | "low" | "out";
 
-const FILTER_OPTIONS = [
-  { i: 0, v: "all" as const, label: (s: { total: number }) => `Todos (${s.total})` },
-  { i: 1, v: "low" as const, label: (s: { low: number }) => `Stock bajo (${s.low})` },
-  { i: 2, v: "out" as const, label: (s: { out: number }) => `Sin stock (${s.out})` },
-];
-
 export function InventoryPage() {
   const { success, error: toastError } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [filter, setFilter] = useState("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
-  const [filterIndex, setFilterIndex] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -104,41 +86,53 @@ export function InventoryPage() {
 
   return (
     <div className="fortino-pos-main fortino-pos-inventory">
-      <Stack gap={5}>
-        <div>
+      <div className="flex flex-col gap-5">
+        <header className="fortino-page-header !mb-4 !pb-3">
           <h2 className="fortino-heading-section">Inventario local</h2>
-          <p className="fortino-lead">
-            Existencias sincronizadas en este dispositivo.
-          </p>
-        </div>
+          <p className="fortino-lead">Existencias sincronizadas en este dispositivo.</p>
+        </header>
 
-        <ContentSwitcher
-          selectedIndex={filterIndex}
-          onChange={({ index }) => {
-            const idx = Number(index ?? 0);
-            setFilterIndex(idx);
-            setStockFilter(FILTER_OPTIONS[idx]?.v ?? "all");
-          }}
-        >
-          {FILTER_OPTIONS.map((o) => (
-            <Switch key={o.v} name={o.v} text={o.label(stats)} />
-          ))}
-        </ContentSwitcher>
+        <PageToolbar>
+          <PageToolbarGroup grow>
+            <p className="m-0 text-sm text-muted">
+              {filtered.length} pieza(s) · {stats.low} bajo · {stats.out} agotadas
+            </p>
+          </PageToolbarGroup>
+          <PageToolbarGroup>
+            <Button variant="primary" onPress={handleExportPdf}>
+              <FileText size={16} />
+              Exportar PDF
+            </Button>
+          </PageToolbarGroup>
+        </PageToolbar>
 
-        <div className="fortino-toolbar">
-          <div className="fortino-toolbar-grow">
-            <Search
-              id="local-inventory-search"
-              labelText="Filtrar inventario"
-              placeholder="SKU o nombre…"
+        <DataPanel title="Catálogo local" compact>
+          <div className="flex flex-col gap-4 px-4 py-4 md:px-5">
+            <Tabs
+              selectedKey={stockFilter}
+              onSelectionChange={(key) => setStockFilter(key as StockFilter)}
+            >
+              <Tabs.ListContainer>
+                <Tabs.List aria-label="Filtro de stock">
+                  <Tabs.Tab id="all">Todos ({stats.total})</Tabs.Tab>
+                  <Tabs.Tab id="low">Stock bajo ({stats.low})</Tabs.Tab>
+                  <Tabs.Tab id="out">Sin stock ({stats.out})</Tabs.Tab>
+                </Tabs.List>
+              </Tabs.ListContainer>
+            </Tabs>
+
+            <SearchField
+              aria-label="Filtrar inventario"
               value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
+              onChange={setFilter}
+              className="w-full"
+            >
+              <SearchField.Group>
+                <SearchField.Input id="local-inventory-search" placeholder="SKU o nombre…" />
+              </SearchField.Group>
+            </SearchField>
           </div>
-          <Button kind="primary" renderIcon={DocumentPdf} onClick={handleExportPdf}>
-            Exportar PDF
-          </Button>
-        </div>
+        </DataPanel>
 
         {filtered.length === 0 ? (
           <EmptyState
@@ -150,79 +144,50 @@ export function InventoryPage() {
             }
           />
         ) : (
-          <DataTable
-            rows={filtered.map((p) => ({
-              id: p.id,
-              sku: p.sku,
-              name: p.name,
-              price: `$${Number(p.salePrice).toFixed(2)}`,
-              stock: String(p.stock),
-              min: String(p.minStock),
-              status: p.id,
-            }))}
-            headers={[
-              { key: "sku", header: "SKU" },
-              { key: "name", header: "Nombre" },
-              { key: "price", header: "Precio" },
-              { key: "stock", header: "Stock" },
-              { key: "min", header: "Mínimo" },
-              { key: "status", header: "Estado" },
-            ]}
-            size="md"
-          >
-            {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
-              <Table {...getTableProps()}>
-                <TableHead>
-                  <TableRow>
-                    {headers.map((h) => (
-                      <TableHeader {...getHeaderProps({ header: h })} key={h.key}>
-                        {h.header}
-                      </TableHeader>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => {
-                    const p = filtered.find((x) => x.id === row.id)!;
+          <DataPanel title="Listado" description={`${filtered.length} producto(s)`} compact>
+            <div className="fortino-interactive-table">
+          <Table aria-label="Inventario local">
+            <Table.ScrollContainer>
+              <Table.Content>
+                <Table.Header>
+                  <Table.Column isRowHeader>SKU</Table.Column>
+                  <Table.Column>Nombre</Table.Column>
+                  <Table.Column>Precio</Table.Column>
+                  <Table.Column>Stock</Table.Column>
+                  <Table.Column>Mínimo</Table.Column>
+                  <Table.Column>Estado</Table.Column>
+                </Table.Header>
+                <Table.Body>
+                  {filtered.map((p) => {
+                    const out = p.stock <= 0;
+                    const low = p.stock <= p.minStock;
                     return (
-                      <TableRow {...getRowProps({ row })} key={row.id}>
-                        {row.cells.map((cell) => {
-                          if (cell.info.header === "status") {
-                            return (
-                              <TableCell key={cell.id}>
-                                <StockBadge stock={p.stock} minStock={p.minStock} />
-                              </TableCell>
-                            );
-                          }
-                          if (cell.info.header === "stock") {
-                            const out = p.stock <= 0;
-                            const low = p.stock <= p.minStock;
-                            return (
-                              <TableCell key={cell.id}>
-                                <span style={{ color: out ? "var(--cds-support-error)" : low ? "var(--cds-support-warning)" : undefined }}>
-                                  {cell.value}
-                                </span>
-                              </TableCell>
-                            );
-                          }
-                          if (cell.info.header === "sku" || cell.info.header === "price") {
-                            return (
-                              <TableCell key={cell.id} className="mono">
-                                {cell.value}
-                              </TableCell>
-                            );
-                          }
-                          return <TableCell key={cell.id}>{cell.value}</TableCell>;
-                        })}
-                      </TableRow>
+                      <Table.Row key={p.id} id={p.id}>
+                        <Table.Cell className="mono">{p.sku}</Table.Cell>
+                        <Table.Cell>{p.name}</Table.Cell>
+                        <Table.Cell className="mono">
+                          ${Number(p.salePrice).toFixed(2)}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className={out ? "fortino-text-error" : low ? "fortino-text-warning" : undefined}>
+                            {p.stock}
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell>{p.minStock}</Table.Cell>
+                        <Table.Cell>
+                          <StockBadge stock={p.stock} minStock={p.minStock} />
+                        </Table.Cell>
+                      </Table.Row>
                     );
                   })}
-                </TableBody>
-              </Table>
-            )}
-          </DataTable>
+                </Table.Body>
+              </Table.Content>
+            </Table.ScrollContainer>
+          </Table>
+            </div>
+          </DataPanel>
         )}
-      </Stack>
+      </div>
     </div>
   );
 }

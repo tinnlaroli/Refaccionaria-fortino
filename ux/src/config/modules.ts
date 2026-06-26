@@ -37,6 +37,34 @@ export const ADMIN_MODULES: AdminModule[] = [
     permission: "products.view",
   },
   {
+    path: "/app/marcas",
+    label: "Marcas",
+    description: "Fabricantes y líneas de producto",
+    icon: "tag",
+    permission: "brands.view",
+  },
+  {
+    path: "/app/proveedores",
+    label: "Proveedores",
+    description: "Quién surte tu inventario",
+    icon: "truck",
+    permission: "suppliers.view",
+  },
+  {
+    path: "/app/compras",
+    label: "Compras",
+    description: "Entradas de mercancía por proveedor",
+    icon: "inbox",
+    permission: "purchases.view",
+  },
+  {
+    path: "/app/imagenes",
+    label: "Imágenes",
+    description: "Biblioteca visual del catálogo",
+    icon: "image",
+    permission: "media.view",
+  },
+  {
     path: "/app/inventario",
     label: "Inventario",
     description: "Existencias y movimientos",
@@ -78,7 +106,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Catálogo",
     tone: "teal",
     items: ADMIN_MODULES.filter((m) =>
-      ["/app/productos", "/app/categorias"].includes(m.path),
+      ["/app/productos", "/app/categorias", "/app/marcas", "/app/proveedores", "/app/compras", "/app/imagenes"].includes(m.path),
     ),
   },
   {

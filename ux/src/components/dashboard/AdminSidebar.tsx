@@ -1,9 +1,9 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { IconButton } from "@carbon/react";
-import { ChevronLeft, ChevronRight, Store } from "@carbon/icons-react";
+import { Button } from "@heroui/react";
+import { ChevronLeft, ChevronRight, Store } from "lucide-react";
 import { NAV_GROUPS, type AdminModule } from "../../config/modules.js";
 import { usePermissions } from "../../hooks/usePermissions.js";
-import { carbonNavIcon } from "../carbon/CarbonNavIcons.js";
+import { navIcon } from "../ui/NavIcons.js";
 import { SidebarAccount } from "./SidebarAccount.js";
 
 const SIDEBAR_KEY = "fortino-sidebar-collapsed";
@@ -46,7 +46,7 @@ function NavItem({
   collapsed: boolean;
   onNavigate: () => void;
 }) {
-  const Icon = carbonNavIcon(mod.icon);
+  const Icon = navIcon(mod.icon);
   const location = useLocation();
   const active = isModuleActive(location.pathname, mod.path);
 
@@ -97,16 +97,16 @@ export function AdminSidebar({
       <div className="fortino-sidebar__head">
         {!collapsed && <p className="fortino-sidebar__title">Administración</p>}
         {showCollapseToggle && (
-          <IconButton
-            kind="ghost"
+          <Button
+            variant="ghost"
             size="sm"
-            align="right"
-            label={collapsed ? "Expandir menú" : "Contraer menú"}
-            onClick={onToggleCollapse}
+            isIconOnly
+            aria-label={collapsed ? "Expandir menú" : "Contraer menú"}
+            onPress={onToggleCollapse}
             className="fortino-sidebar__toggle"
           >
             {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          </IconButton>
+          </Button>
         )}
       </div>
 

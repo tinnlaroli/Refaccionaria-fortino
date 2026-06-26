@@ -1,35 +1,25 @@
-import { Button, HeaderGlobalAction } from "@carbon/react";
-import { Light, Asleep } from "@carbon/icons-react";
+import { Button } from "@heroui/react";
+import { Moon, Sun } from "lucide-react";
 import { useThemeContext } from "../context/ThemeContext.js";
 
 type Props = {
-  /** En login u otras vistas fuera del header Carbon */
   standalone?: boolean;
 };
 
-export function ThemeToggle({ standalone }: Props) {
+export function ThemeToggle({ standalone: _standalone }: Props) {
   const { isDark, toggle } = useThemeContext();
   const label = isDark ? "Modo claro" : "Modo oscuro";
-  const icon = isDark ? <Light size={20} /> : <Asleep size={20} />;
-
-  if (standalone) {
-    return (
-      <Button
-        kind="ghost"
-        size="sm"
-        hasIconOnly
-        iconDescription={label}
-        aria-label={label}
-        onClick={toggle}
-      >
-        {icon}
-      </Button>
-    );
-  }
+  const icon = isDark ? <Sun size={20} /> : <Moon size={20} />;
 
   return (
-    <HeaderGlobalAction aria-label={label} onClick={toggle} tooltipAlignment="end">
+    <Button
+      variant="ghost"
+      size="sm"
+      isIconOnly
+      aria-label={label}
+      onPress={toggle}
+    >
       {icon}
-    </HeaderGlobalAction>
+    </Button>
   );
 }

@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ToastNotification } from "@carbon/react";
+import { Alert } from "@heroui/react";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -27,10 +27,10 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const KIND: Record<ToastType, "success" | "error" | "info" | "warning"> = {
+const STATUS: Record<ToastType, "success" | "danger" | "accent" | "warning"> = {
   success: "success",
-  error: "error",
-  info: "info",
+  error: "danger",
+  info: "accent",
   warning: "warning",
 };
 
@@ -73,15 +73,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="fortino-toast-stack" aria-live="polite">
         {toasts.map((t) => (
-          <ToastNotification
-            key={t.id}
-            kind={KIND[t.type]}
-            title={t.title ?? TITLES[t.type]}
-            subtitle={t.message}
-            caption=""
-            onClose={() => dismiss(t.id)}
-            timeout={0}
-          />
+          <Alert key={t.id} status={STATUS[t.type]} className="shadow-lg">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>{t.title ?? TITLES[t.type]}</Alert.Title>
+              <Alert.Description>{t.message}</Alert.Description>
+              <button
+                type="button"
+                className="mt-1 text-xs underline"
+                onClick={() => dismiss(t.id)}
+              >
+                Cerrar
+              </button>
+            </Alert.Content>
+          </Alert>
         ))}
       </div>
     </ToastContext.Provider>

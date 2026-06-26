@@ -1,5 +1,5 @@
-import { Button, IconButton } from "@carbon/react";
-import { Logout } from "@carbon/icons-react";
+import { Button } from "@heroui/react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.js";
 import { usePermissions } from "../../hooks/usePermissions.js";
 import { getUserInitials } from "../../lib/userDisplay.js";
@@ -22,14 +22,15 @@ export function SidebarAccount({ collapsed }: Props) {
           {initials}
         </span>
         <ThemeSegment compact />
-        <IconButton
-          kind="ghost"
-          size="md"
-          label="Cerrar sesión"
-          onClick={() => logout()}
+        <Button
+          variant="ghost"
+          size="sm"
+          isIconOnly
+          aria-label="Cerrar sesión"
+          onPress={() => logout()}
         >
-          <Logout size={18} />
-        </IconButton>
+          <LogOut size={18} />
+        </Button>
       </div>
     );
   }
@@ -49,13 +50,13 @@ export function SidebarAccount({ collapsed }: Props) {
       <ThemeSegment />
 
       <Button
-        kind="danger--ghost"
+        variant="danger"
         size="sm"
-        renderIcon={Logout}
-        className="fortino-sidebar-logout"
-        onClick={() => logout()}
+        className="fortino-sidebar-logout w-full"
+        onPress={() => logout()}
       >
-        Cerrar sesión
+        <LogOut size={16} />
+        <span>Cerrar sesión</span>
       </Button>
     </div>
   );

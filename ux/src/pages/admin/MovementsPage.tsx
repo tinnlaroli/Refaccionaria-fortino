@@ -1,19 +1,10 @@
 import { useEffect, useState } from "react";
-import {
-  ContentSwitcher,
-  DataTable,
-  Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Tag,
-} from "@carbon/react";
+import { Chip, Table, Tabs } from "@heroui/react";
 import { fetchAuditLog, type AuditEntry } from "../../api/audit.js";
-import { ErrorBanner, TableSkeleton } from "../../components/carbon/PageFeedback.js";
 import { EmptyState } from "../../components/EmptyState.js";
+import { ErrorBanner, TableSkeleton } from "../../components/ui/PageFeedback.js";
+import { DataPanel } from "../../components/ui/DataPanel.js";
+import { PageToolbar, PageToolbarGroup } from "../../components/ui/PageToolbar.js";
 import { useAuth } from "../../context/AuthContext.js";
 import { getErrorMessage } from "../../lib/errors.js";
 
@@ -23,20 +14,17 @@ const ACTION_LABELS: Record<string, string> = {
   "sale.cancel": "Venta cancelada",
   "product.create": "Producto creado",
   "product.update": "Producto actualizado",
+  "purchase.create": "Compra a proveedor",
 };
 
-const FILTER_OPTIONS = [
-  { i: 0, v: "inventory" as const, t: "Inventario" },
-  { i: 1, v: "sales" as const, t: "Ventas" },
-  { i: 2, v: "all" as const, t: "Todo" },
-];
+type FilterValue = "inventory" | "sales" | "all";
 
-const ACTION_TAG: Record<string, "blue" | "green" | "red" | "gray" | "purple"> = {
-  "product.stock_adjust": "blue",
-  "sale.create": "green",
-  "sale.cancel": "red",
-  "product.create": "purple",
-  "product.update": "gray",
+const ACTION_CHIP: Record<string, "accent" | "success" | "danger" | "default" | "secondary"> = {
+  "product.stock_adjust": "accent",
+  "sale.create": "success",
+  "sale.cancel": "danger",
+  "product.create": "secondary",
+  "product.update": "default",
 };
 
 const PAYMENT_LABELS_ES: Record<string, string> = {
@@ -50,8 +38,7 @@ export function MovementsPage() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"inventory" | "sales" | "all">("inventory");
-  const [filterIndex, setFilterIndex] = useState(0);
+  const [filter, setFilter] = useState<FilterValue>("inventory");
 
   useEffect(() => {
     if (!token) return;
@@ -90,18 +77,22 @@ export function MovementsPage() {
 
   return (
     <div className="fortino-admin-page">
-      <ContentSwitcher
-        selectedIndex={filterIndex}
-        onChange={({ index }) => {
-          const idx = Number(index ?? 0);
-          setFilterIndex(idx);
-          setFilter(FILTER_OPTIONS[idx]?.v ?? "inventory");
-        }}
-      >
-        {FILTER_OPTIONS.map((o) => (
-          <Switch key={o.v} name={o.v} text={o.t} />
-        ))}
-      </ContentSwitcher>
+      <DataPanel title="Historial de movimientos" description="Auditoría de inventario y ventas" compact>
+        <div className="px-4 py-4 md:px-5">
+          <Tabs
+            selectedKey={filter}
+            onSelectionChange={(key) => setFilter(key as FilterValue)}
+          >
+            <Tabs.ListContainer>
+              <Tabs.List aria-label="Filtro de movimientos">
+                <Tabs.Tab id="inventory">Inventario</Tabs.Tab>
+                <Tabs.Tab id="sales">Ventas</Tabs.Tab>
+                <Tabs.Tab id="all">Todo</Tabs.Tab>
+              </Tabs.List>
+            </Tabs.ListContainer>
+          </Tabs>
+        </div>
+      </DataPanel>
 
       {error && <ErrorBanner message={error} onClose={() => setError(null)} />}
 
@@ -110,63 +101,40 @@ export function MovementsPage() {
       ) : entries.length === 0 ? (
         <EmptyState title="Sin registros" description="No hay movimientos en esta vista." />
       ) : (
-        <DataTable
-          rows={entries.map((e) => ({
-            id: e.id,
-            date: new Date(e.createdAt).toLocaleString("es-MX"),
-            action: e.action,
-            user: e.userName ?? "Sistema",
-            detail: describePayload(e),
-          }))}
-          headers={[
-            { key: "date", header: "Fecha" },
-            { key: "action", header: "Acción" },
-            { key: "user", header: "Usuario" },
-            { key: "detail", header: "Detalle" },
-          ]}
-        >
-          {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
-            <Table {...getTableProps()}>
-              <TableHead>
-                <TableRow>
-                  {headers.map((h) => (
-                    <TableHeader {...getHeaderProps({ header: h })} key={h.key}>
-                      {h.header}
-                    </TableHeader>
+        <DataPanel title="Registros" description={`${entries.length} evento(s)`} compact>
+          <div className="fortino-interactive-table">
+          <Table aria-label="Historial de movimientos">
+            <Table.ScrollContainer>
+              <Table.Content>
+                <Table.Header>
+                  <Table.Column isRowHeader>Fecha</Table.Column>
+                  <Table.Column>Acción</Table.Column>
+                  <Table.Column>Usuario</Table.Column>
+                  <Table.Column>Detalle</Table.Column>
+                </Table.Header>
+                <Table.Body>
+                  {entries.map((entry) => (
+                    <Table.Row key={entry.id} id={entry.id}>
+                      <Table.Cell>
+                        {new Date(entry.createdAt).toLocaleString("es-MX")}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Chip color={ACTION_CHIP[entry.action] ?? "default"} size="sm">
+                          <Chip.Label>
+                            {ACTION_LABELS[entry.action] ?? entry.action}
+                          </Chip.Label>
+                        </Chip>
+                      </Table.Cell>
+                      <Table.Cell>{entry.userName ?? "Sistema"}</Table.Cell>
+                      <Table.Cell className="text-sm">{describePayload(entry)}</Table.Cell>
+                    </Table.Row>
                   ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => {
-                  const entry = entries.find((e) => e.id === row.id)!;
-                  return (
-                    <TableRow {...getRowProps({ row })} key={row.id}>
-                      {row.cells.map((cell) => {
-                        if (cell.info.header === "action") {
-                          return (
-                            <TableCell key={cell.id}>
-                              <Tag type={ACTION_TAG[entry.action] ?? "gray"} size="sm">
-                                {ACTION_LABELS[entry.action] ?? entry.action}
-                              </Tag>
-                            </TableCell>
-                          );
-                        }
-                        if (cell.info.header === "detail") {
-                          return (
-                            <TableCell key={cell.id} className="cds--body-compact-01">
-                              {cell.value}
-                            </TableCell>
-                          );
-                        }
-                        return <TableCell key={cell.id}>{cell.value}</TableCell>;
-                      })}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </DataTable>
+                </Table.Body>
+              </Table.Content>
+            </Table.ScrollContainer>
+          </Table>
+        </div>
+        </DataPanel>
       )}
     </div>
   );

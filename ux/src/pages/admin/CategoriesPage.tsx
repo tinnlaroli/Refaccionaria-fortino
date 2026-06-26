@@ -1,18 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Button,
-  DataTable,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TextInput,
-} from "@carbon/react";
-import { Add, Edit } from "@carbon/icons-react";
+import { Button, Table } from "@heroui/react";
+import { Plus, Pencil } from "lucide-react";
 import {
   createCategory,
   fetchCategories,
@@ -20,13 +9,14 @@ import {
   updateCategory,
   type Category,
 } from "../../api/admin-categories.js";
-import { AppModal } from "../../components/carbon/AppModal.js";
-import {
-  InteractiveTableRow,
-  TABLE_ACTIONS_RAIL,
-} from "../../components/carbon/InteractiveTableRow.js";
-import { ErrorBanner, TableSkeleton } from "../../components/carbon/PageFeedback.js";
+import { AppModal } from "../../components/ui/AppModal.js";
 import { EmptyState } from "../../components/EmptyState.js";
+import { InteractiveTableRow } from "../../components/ui/InteractiveTableRow.js";
+import { ErrorBanner, TableSkeleton } from "../../components/ui/PageFeedback.js";
+import { DataPanel } from "../../components/ui/DataPanel.js";
+import { PageToolbar, PageToolbarGroup } from "../../components/ui/PageToolbar.js";
+import { EX } from "../../config/fieldExamples.js";
+import { FortinoTextField } from "../../components/ui/FortinoTextField.js";
 import { useAuth } from "../../context/AuthContext.js";
 import { useToast } from "../../context/ToastContext.js";
 import { usePermissions } from "../../hooks/usePermissions.js";
@@ -139,13 +129,19 @@ export function CategoriesPage() {
 
   return (
     <div className="fortino-admin-page">
-      <div className="fortino-page-actions">
+      <PageToolbar>
+        <PageToolbarGroup grow>
+          <p className="m-0 text-sm text-muted">{categories.length} categoría(s)</p>
+        </PageToolbarGroup>
         {canCreate && (
-          <Button kind="primary" renderIcon={Add} onClick={openCreate}>
-            Agregar categoría
-          </Button>
+          <PageToolbarGroup>
+            <Button variant="primary" onPress={openCreate}>
+              <Plus size={16} />
+              Agregar categoría
+            </Button>
+          </PageToolbarGroup>
         )}
-      </div>
+      </PageToolbar>
 
       {error && <ErrorBanner message={error} onClose={() => setError(null)} />}
 
@@ -163,100 +159,82 @@ export function CategoriesPage() {
           onAction={canCreate ? openCreate : undefined}
         />
       ) : (
-        <div className="fortino-interactive-table">
-          <DataTable
-            rows={categories.map((c) => ({ id: c.id, name: c.name, slug: c.slug }))}
-            headers={[
-              { key: "name", header: "Nombre" },
-              { key: "slug", header: "Identificador web" },
-              ...(canEdit ? [TABLE_ACTIONS_RAIL] : []),
-            ]}
-          >
-            {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
-              <Table {...getTableProps()}>
-                <TableHead>
-                  <TableRow>
-                    {headers.map((h) => (
-                      <TableHeader
-                        {...getHeaderProps({ header: h })}
-                        key={h.key}
-                        className={h.key === "_rail" ? "fortino-row-actions-cell" : undefined}
-                      >
-                        {h.header}
-                      </TableHeader>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => {
-                    const cat = categories.find((c) => c.id === row.id)!;
-                    return (
-                      <InteractiveTableRow
-                        key={row.id}
-                        rowProps={getRowProps({ row })}
-                        onOpen={canEdit ? () => openEdit(cat) : undefined}
-                        actions={
-                          canEdit
-                            ? [{ label: "Editar categoría", icon: Edit, onClick: () => openEdit(cat) }]
-                            : []
-                        }
-                        ariaLabel={`Categoría ${cat.name}`}
-                      >
-                        {row.cells.map((cell) => {
-                          if (cell.info.header === "slug") {
-                            return (
-                              <TableCell key={cell.id} className="mono">
-                                {cell.value}
-                              </TableCell>
-                            );
-                          }
-                          return <TableCell key={cell.id}>{cell.value}</TableCell>;
-                        })}
-                      </InteractiveTableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </DataTable>
+        <DataPanel title="Categorías del catálogo" description="Organiza refacciones por tipo" compact>
+          <div className="fortino-interactive-table">
+          <Table aria-label="Categorías">
+            <Table.ScrollContainer>
+              <Table.Content>
+                <Table.Header>
+                  <Table.Column isRowHeader>Nombre</Table.Column>
+                  <Table.Column>Identificador web</Table.Column>
+                  {canEdit && <Table.Column className="fortino-row-actions-cell" />}
+                </Table.Header>
+                <Table.Body>
+                  {categories.map((cat) => (
+                    <InteractiveTableRow
+                      key={cat.id}
+                      id={cat.id}
+                      reserveActionsColumn={canEdit}
+                      onOpen={canEdit ? () => openEdit(cat) : undefined}
+                      actions={
+                        canEdit
+                          ? [{ label: "Editar categoría", icon: Pencil, onClick: () => openEdit(cat) }]
+                          : []
+                      }
+                      ariaLabel={`Categoría ${cat.name}`}
+                    >
+                      <Table.Cell>{cat.name}</Table.Cell>
+                      <Table.Cell className="mono">{cat.slug}</Table.Cell>
+                    </InteractiveTableRow>
+                  ))}
+                </Table.Body>
+              </Table.Content>
+            </Table.ScrollContainer>
+          </Table>
         </div>
+        </DataPanel>
       )}
 
       <AppModal
         open={modalOpen}
         title={editing ? "Editar categoría" : "Nueva categoría"}
+        subtitle={
+          editing
+            ? "Actualiza el nombre visible y el identificador web"
+            : "Agrupa productos por tipo de refacción"
+        }
         onClose={closeModal}
         onSubmit={handleSubmit}
         loading={saving}
       >
-        <Stack gap={5}>
-          <TextInput
+        <div className="flex flex-col gap-5">
+          <FortinoTextField
             id="cat-name"
-            labelText="Nombre"
+            label="Nombre de la categoría"
+            placeholder={EX.categoryName}
             value={name}
-            onChange={(e) => {
-              const next = blockDigitsInName(e.target.value);
-              setName(next);
-              if (!editing && !slug) setSlug(slugify(next));
+            onChange={(next) => {
+              const v = blockDigitsInName(next);
+              setName(v);
+              if (!editing && !slug) setSlug(slugify(v));
             }}
             onBlur={() => touchField("name")}
-            invalid={Boolean(fieldErrors.name)}
-            invalidText={fieldErrors.name}
+            error={fieldErrors.name}
             helperText="Solo letras, sin números"
             required
           />
-          <TextInput
+          <FortinoTextField
             id="cat-slug"
-            labelText="Identificador web"
-            helperText="Se genera automáticamente desde el nombre (ej. filtros-aceite)"
+            label="Identificador web (slug)"
+            placeholder={EX.categorySlug}
+            helperText="Se genera solo al crear; minúsculas y guiones"
             value={slug}
-            onChange={(e) => setSlug(slugify(e.target.value))}
+            onChange={(next) => setSlug(slugify(next))}
             onBlur={() => touchField("slug")}
-            invalid={Boolean(fieldErrors.slug)}
-            invalidText={fieldErrors.slug}
+            error={fieldErrors.slug}
             required
           />
-        </Stack>
+        </div>
       </AppModal>
     </div>
   );

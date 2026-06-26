@@ -7,18 +7,14 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
-$args = @(
-  "compose",
-  "-f", "docker-compose.yml",
-  "-f", "docker-compose.dev.yml",
-  "up"
-)
+$args = @("up")
 
 if ($Build) {
   $args += "--build"
 }
 
-Write-Host "Modo desarrollo — cambios en ux/, api/, landing/ se reflejan sin rebuild." -ForegroundColor Cyan
-Write-Host "Gateway: http://localhost:8080/pos/app" -ForegroundColor Green
+Write-Host "Modo desarrollo — override activo: cambios en ux/, api/, landing/ sin reiniciar." -ForegroundColor Cyan
+Write-Host "Si cambiaste package.json: docker compose up --build" -ForegroundColor Yellow
+Write-Host "Gateway: http://localhost:8080/pos/" -ForegroundColor Green
 
-& docker @args
+& docker compose up @args

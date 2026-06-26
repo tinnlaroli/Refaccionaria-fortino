@@ -124,3 +124,27 @@ export async function getSyncQueueStats() {
   const [pending, failed] = await Promise.all([getPendingCount(), getFailedSyncCount()]);
   return { pending, failed };
 }
+
+export async function getActiveQueueItems() {
+  return db.transactionQueue
+    .where("status")
+    .anyOf(["pending", "error"])
+    .sortBy("createdAt");
+}
+
+export async function discardQueueItem(id: number) {
+  await db.transactionQueue.delete(id);
+}
+
+export async function retryAllFailed(token: string) {
+  await db.transactionQueue.where("status").equals("error").modify({ status: "pending", error: undefined });
+  return pushPendingSales(token);
+}
+
+export async function purgeSyncedQueue(olderThanDays = 7) {
+  const cutoff = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
+  const synced = await db.transactionQueue.where("status").equals("synced").toArray();
+  const stale = synced.filter((r) => r.createdAt < cutoff);
+  await db.transactionQueue.bulkDelete(stale.map((r) => r.id!));
+  return stale.length;
+}

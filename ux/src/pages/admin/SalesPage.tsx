@@ -1,33 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Button,
-  ContentSwitcher,
-  DataTable,
-  Search,
-  Stack,
-  Switch,
+  Chip,
+  SearchField,
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Tag,
-} from "@carbon/react";
-import { Download, DocumentPdf } from "@carbon/icons-react";
+  Tabs,
+} from "@heroui/react";
+import { FileText, Eye } from "lucide-react";
 import {
   cancelSale,
-  exportSalesCsv,
   fetchSales,
   type SaleRecord,
 } from "../../api/admin-sales.js";
-import { AppModal } from "../../components/carbon/AppModal.js";
-import {
-  InteractiveTableRow,
-  TABLE_ACTIONS_RAIL,
-} from "../../components/carbon/InteractiveTableRow.js";
-import { ErrorBanner, TableSkeleton } from "../../components/carbon/PageFeedback.js";
+import { AppModal } from "../../components/ui/AppModal.js";
 import { EmptyState } from "../../components/EmptyState.js";
+import { InteractiveTableRow } from "../../components/ui/InteractiveTableRow.js";
+import { ErrorBanner, TableSkeleton } from "../../components/ui/PageFeedback.js";
+import { DataPanel } from "../../components/ui/DataPanel.js";
+import { PageStatStrip, PageToolbar, PageToolbarGroup } from "../../components/ui/PageToolbar.js";
 import { useAuth } from "../../context/AuthContext.js";
 import { useToast } from "../../context/ToastContext.js";
 import { usePermissions } from "../../hooks/usePermissions.js";
@@ -56,25 +46,13 @@ function getRange(filter: DateFilter): { from?: string; to?: string } {
   return { from: startOfDay(weekAgo).toISOString() };
 }
 
-const DATE_OPTIONS = [
-  { i: 0, v: "today" as const, t: "Hoy" },
-  { i: 1, v: "week" as const, t: "7 días" },
-  { i: 2, v: "all" as const, t: "Todo" },
-];
-
 const PERIOD_LABELS: Record<DateFilter, string> = {
   today: "Periodo: Hoy",
   week: "Periodo: Últimos 7 días",
   all: "Periodo: Histórico completo",
 };
 
-const STATUS_OPTIONS = [
-  { i: 0, v: "all" as const, t: "Todas" },
-  { i: 1, v: "completed" as const, t: "Completadas" },
-  { i: 2, v: "cancelled" as const, t: "Canceladas" },
-];
-
-const STATUS_LABELS: Record<(typeof STATUS_OPTIONS)[number]["v"], string> = {
+const STATUS_LABELS: Record<"all" | "completed" | "cancelled", string> = {
   all: "Todas",
   completed: "Completadas",
   cancelled: "Canceladas",
@@ -88,10 +66,8 @@ export function SalesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
-  const [dateIndex, setDateIndex] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "cancelled">("all");
-  const [statusIndex, setStatusIndex] = useState(0);
   const [selected, setSelected] = useState<SaleRecord | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
@@ -146,22 +122,6 @@ export function SalesPage() {
     }
   };
 
-  const handleExportCsv = async () => {
-    if (!token) return;
-    try {
-      const blob = await exportSalesCsv(token, getRange(dateFilter));
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "ventas-fortino.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-      success("Exportación descargada");
-    } catch (err) {
-      toastError(getErrorMessage(err, "Error al exportar"));
-    }
-  };
-
   const handleCancel = async (sale: SaleRecord) => {
     if (!token || !canCancel) return;
     if (!window.confirm(`¿Cancelar venta por $${Number(sale.total).toFixed(2)}? Se restaurará el stock.`)) {
@@ -182,65 +142,72 @@ export function SalesPage() {
 
   return (
     <div className="fortino-admin-page">
-      <div className="fortino-page-actions" style={{ justifyContent: "space-between", width: "100%" }}>
-        <p className="cds--body-compact-01" style={{ margin: 0 }}>
-          {stats.count} venta(s) · <strong className="price">${stats.total.toFixed(2)} MXN</strong>
-        </p>
+      <PageToolbar>
+        <PageToolbarGroup grow>
+          <PageStatStrip
+            label="Ventas filtradas"
+            value={
+              <>
+                {stats.count} operación(es) · <span className="price">${stats.total.toFixed(2)} MXN</span>
+              </>
+            }
+          />
+        </PageToolbarGroup>
         {canExport && (
-          <>
-            <Button kind="primary" renderIcon={DocumentPdf} onClick={handleExportPdf}>
+          <PageToolbarGroup>
+            <Button variant="primary" onPress={handleExportPdf}>
+              <FileText size={16} />
               Exportar PDF
             </Button>
-            <Button kind="tertiary" renderIcon={Download} onClick={handleExportCsv}>
-              CSV
-            </Button>
-          </>
+          </PageToolbarGroup>
         )}
-      </div>
+      </PageToolbar>
 
-      <Stack gap={4}>
-        <ContentSwitcher
-          selectedIndex={dateIndex}
-          onChange={({ index }) => {
-            const idx = Number(index ?? 0);
-            setDateIndex(idx);
-            setDateFilter(DATE_OPTIONS[idx]?.v ?? "week");
-          }}
-        >
-          {DATE_OPTIONS.map((o) => (
-            <Switch key={o.v} name={o.v} text={o.t} />
-          ))}
-        </ContentSwitcher>
+      <DataPanel title="Filtros" compact>
+        <div className="flex flex-col gap-4 px-4 py-4 md:px-5">
+          <Tabs
+            selectedKey={dateFilter}
+            onSelectionChange={(key) => setDateFilter(key as DateFilter)}
+          >
+            <Tabs.ListContainer>
+              <Tabs.List aria-label="Periodo">
+                <Tabs.Tab id="today">Hoy</Tabs.Tab>
+                <Tabs.Tab id="week">7 días</Tabs.Tab>
+                <Tabs.Tab id="all">Todo</Tabs.Tab>
+              </Tabs.List>
+            </Tabs.ListContainer>
+          </Tabs>
 
-        <ContentSwitcher
-          selectedIndex={statusIndex}
-          onChange={({ index }) => {
-            const idx = Number(index ?? 0);
-            setStatusIndex(idx);
-            setStatusFilter(STATUS_OPTIONS[idx]?.v ?? "all");
-          }}
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <Switch key={o.v} name={o.v} text={o.t} />
-          ))}
-        </ContentSwitcher>
-      </Stack>
+          <Tabs
+            selectedKey={statusFilter}
+            onSelectionChange={(key) => setStatusFilter(key as typeof statusFilter)}
+          >
+            <Tabs.ListContainer>
+              <Tabs.List aria-label="Estado">
+                <Tabs.Tab id="all">Todas</Tabs.Tab>
+                <Tabs.Tab id="completed">Completadas</Tabs.Tab>
+                <Tabs.Tab id="cancelled">Canceladas</Tabs.Tab>
+              </Tabs.List>
+            </Tabs.ListContainer>
+          </Tabs>
 
-      <div className="fortino-toolbar" style={{ marginTop: "1rem" }}>
-        <div className="fortino-toolbar-grow">
-          <Search
-            id="sales-search"
-            labelText="Buscar ventas"
-            placeholder="SKU o producto…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && load()}
-          />
+          <div className="fortino-toolbar !mb-0 !border-0 !p-0">
+            <SearchField
+              aria-label="Buscar ventas"
+              value={search}
+              onChange={setSearch}
+              className="fortino-toolbar-grow"
+            >
+              <SearchField.Group>
+                <SearchField.Input placeholder="SKU o producto…" onKeyDown={(e) => e.key === "Enter" && load()} />
+              </SearchField.Group>
+            </SearchField>
+            <Button variant="secondary" onPress={() => load()}>
+              Buscar
+            </Button>
+          </div>
         </div>
-        <Button kind="secondary" onClick={() => load()}>
-          Buscar
-        </Button>
-      </div>
+      </DataPanel>
 
       {error && <ErrorBanner message={error} onClose={() => setError(null)} />}
 
@@ -249,97 +216,67 @@ export function SalesPage() {
       ) : sales.length === 0 ? (
         <EmptyState title="Sin ventas" description="No hay operaciones que coincidan con los filtros." />
       ) : (
-        <div className="fortino-interactive-table">
-        <DataTable
-          rows={sales.map((s) => ({
-            id: s.id,
-            date: new Date(s.soldAt).toLocaleString("es-MX"),
-            total: `$${Number(s.total).toFixed(2)}`,
-            payment: PAYMENT_LABELS[s.paymentMethod],
-            status: s.status,
-            cashier: s.cashier?.fullName ?? "—",
-            items: String(s.items.length),
-          }))}
-          headers={[
-            { key: "date", header: "Fecha" },
-            { key: "total", header: "Total" },
-            { key: "payment", header: "Pago" },
-            { key: "status", header: "Estado" },
-            { key: "cashier", header: "Cajero" },
-            { key: "items", header: "Artículos" },
-            TABLE_ACTIONS_RAIL,
-          ]}
-        >
-          {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
-            <Table {...getTableProps()}>
-              <TableHead>
-                <TableRow>
-                  {headers.map((h) => (
-                    <TableHeader
-                      {...getHeaderProps({ header: h })}
-                      key={h.key}
-                      className={h.key === "_rail" ? "fortino-row-actions-cell" : undefined}
-                    >
-                      {h.header}
-                    </TableHeader>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => {
-                  const sale = sales.find((s) => s.id === row.id)!;
-                  return (
+        <DataPanel title="Historial de ventas" description={`${sales.length} registro(s) en pantalla`} compact>
+          <div className="fortino-interactive-table">
+          <Table aria-label="Ventas">
+            <Table.ScrollContainer>
+              <Table.Content>
+                <Table.Header>
+                  <Table.Column isRowHeader>Fecha</Table.Column>
+                  <Table.Column>Total</Table.Column>
+                  <Table.Column>Pago</Table.Column>
+                  <Table.Column>Estado</Table.Column>
+                  <Table.Column>Cajero</Table.Column>
+                  <Table.Column>Artículos</Table.Column>
+                  <Table.Column className="fortino-row-actions-cell" />
+                </Table.Header>
+                <Table.Body>
+                  {sales.map((sale) => (
                     <InteractiveTableRow
-                      key={row.id}
-                      rowProps={getRowProps({ row })}
+                      key={sale.id}
+                      id={sale.id}
+                      reserveActionsColumn
                       onOpen={() => setSelected(sale)}
                       actions={[
                         {
                           label: "Ver detalle de venta",
-                          icon: View,
+                          icon: Eye,
                           onClick: () => setSelected(sale),
                         },
                       ]}
                       ariaLabel={`Venta ${sale.total} MXN`}
                     >
-                      {row.cells.map((cell) => {
-                        if (cell.info.header === "status") {
-                          return (
-                            <TableCell key={cell.id}>
-                              <Tag type={sale.status === "cancelled" ? "red" : "green"} size="sm">
-                                {sale.status === "cancelled" ? "Cancelada" : "Completada"}
-                              </Tag>
-                            </TableCell>
-                          );
-                        }
-                        if (cell.info.header === "total") {
-                          return (
-                            <TableCell key={cell.id} className="mono">
-                              {cell.value}
-                            </TableCell>
-                          );
-                        }
-                        return <TableCell key={cell.id}>{cell.value}</TableCell>;
-                      })}
+                      <Table.Cell>{new Date(sale.soldAt).toLocaleString("es-MX")}</Table.Cell>
+                      <Table.Cell className="mono">${Number(sale.total).toFixed(2)}</Table.Cell>
+                      <Table.Cell>{PAYMENT_LABELS[sale.paymentMethod]}</Table.Cell>
+                      <Table.Cell>
+                        <Chip color={sale.status === "cancelled" ? "danger" : "success"} size="sm">
+                          <Chip.Label>
+                            {sale.status === "cancelled" ? "Cancelada" : "Completada"}
+                          </Chip.Label>
+                        </Chip>
+                      </Table.Cell>
+                      <Table.Cell>{sale.cashier?.fullName ?? "—"}</Table.Cell>
+                      <Table.Cell>{String(sale.items.length)}</Table.Cell>
                     </InteractiveTableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </DataTable>
+                  ))}
+                </Table.Body>
+              </Table.Content>
+            </Table.ScrollContainer>
+          </Table>
         </div>
+        </DataPanel>
       )}
 
       <AppModal
         open={Boolean(selected)}
         title="Detalle de venta"
+        size="lg"
         subtitle={
           selected
-            ? `${new Date(selected.soldAt).toLocaleString("es-MX")} · ${PAYMENT_LABELS[selected.paymentMethod]} · ${selected.cashier?.fullName ?? "Cajero"}`
+            ? `Folio ${selected.id.slice(0, 8)} · ${new Date(selected.soldAt).toLocaleString("es-MX")} · ${PAYMENT_LABELS[selected.paymentMethod]}`
             : undefined
         }
-        size="lg"
         onClose={() => setSelected(null)}
         onSubmit={canCancel && selected?.status === "completed" ? () => handleCancel(selected!) : undefined}
         submitLabel={cancelling ? "Cancelando…" : "Cancelar venta"}
@@ -348,54 +285,35 @@ export function SalesPage() {
         cancelLabel="Cerrar"
       >
         {selected && (
-          <Stack gap={4}>
-            <DataTable
-              rows={selected.items.map((item, idx) => ({
-                id: String(idx),
-                sku: item.sku,
-                name: item.productName,
-                qty: String(item.quantity),
-                price: `$${Number(item.unitPrice).toFixed(2)}`,
-                total: `$${Number(item.lineTotal).toFixed(2)}`,
-              }))}
-              headers={[
-                { key: "sku", header: "SKU" },
-                { key: "name", header: "Producto" },
-                { key: "qty", header: "Cant." },
-                { key: "price", header: "Precio" },
-                { key: "total", header: "Importe" },
-              ]}
-              size="sm"
-            >
-              {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
-                <Table {...getTableProps()} size="sm">
-                  <TableHead>
-                    <TableRow>
-                      {headers.map((h) => (
-                        <TableHeader {...getHeaderProps({ header: h })} key={h.key}>
-                          {h.header}
-                        </TableHeader>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {rows.map((row) => (
-                      <TableRow {...getRowProps({ row })} key={row.id}>
-                        {row.cells.map((cell) => (
-                          <TableCell key={cell.id} className={cell.info.header === "sku" || cell.info.header === "total" ? "mono" : undefined}>
-                            {cell.value}
-                          </TableCell>
-                        ))}
-                      </TableRow>
+          <div className="flex flex-col gap-4">
+            <Table aria-label="Artículos de la venta">
+              <Table.ScrollContainer>
+                <Table.Content>
+                  <Table.Header>
+                    <Table.Column isRowHeader>Código SKU</Table.Column>
+                    <Table.Column>Nombre del producto</Table.Column>
+                    <Table.Column>Cantidad</Table.Column>
+                    <Table.Column>Precio unitario</Table.Column>
+                    <Table.Column>Importe línea</Table.Column>
+                  </Table.Header>
+                  <Table.Body>
+                    {selected.items.map((item, idx) => (
+                      <Table.Row key={String(idx)} id={String(idx)}>
+                        <Table.Cell className="mono">{item.sku}</Table.Cell>
+                        <Table.Cell>{item.productName}</Table.Cell>
+                        <Table.Cell>{item.quantity}</Table.Cell>
+                        <Table.Cell className="mono">${Number(item.unitPrice).toFixed(2)}</Table.Cell>
+                        <Table.Cell className="mono">${Number(item.lineTotal).toFixed(2)}</Table.Cell>
+                      </Table.Row>
                     ))}
-                  </TableBody>
-                </Table>
-              )}
-            </DataTable>
-            <p className="checkout-total price" style={{ margin: 0 }}>
+                  </Table.Body>
+                </Table.Content>
+              </Table.ScrollContainer>
+            </Table>
+            <p className="checkout-total price m-0">
               Total: ${Number(selected.total).toFixed(2)} MXN
             </p>
-          </Stack>
+          </div>
         )}
       </AppModal>
     </div>

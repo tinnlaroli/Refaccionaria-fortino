@@ -15,6 +15,13 @@ export type Product = {
   salePrice: string;
   stock: number;
   minStock: number;
+  unitOfMeasure?: string;
+  brandId?: string | null;
+  brandName?: string | null;
+  presentation?: string | null;
+  vehicleCompatibility?: string | null;
+  primaryMediaId?: string | null;
+  imageUrl?: string | null;
   isActive: boolean;
   updatedAt: string;
 };

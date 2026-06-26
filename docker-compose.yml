@@ -1,11 +1,13 @@
 ﻿# Refaccionaria Fortino — stack unificado
 #
-# Producción (build estático + nginx):
-#   docker compose up -d --build
+# Desarrollo (HMR automático — recomendado):
+#   docker compose up
+#   docker compose up --build   # primera vez o tras cambiar package.json
+#   (docker-compose.override.yml activa Vite + nodemon sin reiniciar)
 #
-# Desarrollo (recarga automática, sin rebuild por cada edit):
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build   # primera vez o tras cambiar package.json
+# Producción:
+#   cp .env.example .env
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 #
 # URLs: http://localhost:8080  ·  POS http://localhost:8080/pos/  ·  Admin http://localhost:8080/pos/app
 
@@ -15,9 +17,9 @@ services:
     container_name: refaccionaria-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: refaccionaria
-      POSTGRES_PASSWORD: refaccionaria_dev
-      POSTGRES_DB: refaccionaria
+      POSTGRES_USER: ${POSTGRES_USER:-refaccionaria}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-refaccionaria_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-refaccionaria}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
@@ -33,7 +35,7 @@ services:
       dockerfile: Dockerfile
     container_name: refaccionaria-migrate
     environment:
-      DATABASE_URL: postgresql://refaccionaria:refaccionaria_dev@postgres:5432/refaccionaria
+      DATABASE_URL: postgresql://${POSTGRES_USER:-refaccionaria}:${POSTGRES_PASSWORD:-refaccionaria_dev}@postgres:5432/${POSTGRES_DB:-refaccionaria}
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,7 +47,7 @@ services:
       dockerfile: Dockerfile
     container_name: refaccionaria-seed
     environment:
-      DATABASE_URL: postgresql://refaccionaria:refaccionaria_dev@postgres:5432/refaccionaria
+      DATABASE_URL: postgresql://${POSTGRES_USER:-refaccionaria}:${POSTGRES_PASSWORD:-refaccionaria_dev}@postgres:5432/${POSTGRES_DB:-refaccionaria}
     command: ["npm", "run", "seed"]
     depends_on:
       migrate:
@@ -60,11 +62,23 @@ services:
     restart: unless-stopped
     environment:
       PORT: "3000"
-      DATABASE_URL: postgresql://refaccionaria:refaccionaria_dev@postgres:5432/refaccionaria
-      JWT_SECRET: refaccionaria-dev-secret-change-me
+      DATABASE_URL: postgresql://${POSTGRES_USER:-refaccionaria}:${POSTGRES_PASSWORD:-refaccionaria_dev}@postgres:5432/${POSTGRES_DB:-refaccionaria}
+      JWT_SECRET: ${JWT_SECRET:-refaccionaria-dev-secret-change-me}
     depends_on:
       seed:
         condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   pos:
     build:

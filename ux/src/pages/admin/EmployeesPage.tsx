@@ -1,22 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Button,
-  DataTable,
-  PasswordInput,
-  Select,
-  SelectItem,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Tag,
-  TextInput,
-} from "@carbon/react";
-import { Add } from "@carbon/icons-react";
+import { Button, Chip, Table } from "@heroui/react";
+import { Plus } from "lucide-react";
 import { UserMinusIcon } from "../../components/icons/UserMinusIcon.js";
 import {
   createEmployee,
@@ -26,17 +11,22 @@ import {
   type Employee,
   type Role,
 } from "../../api/admin-users.js";
-import { AppModal } from "../../components/carbon/AppModal.js";
-import {
-  InteractiveTableRow,
-  TABLE_ACTIONS_RAIL,
-} from "../../components/carbon/InteractiveTableRow.js";
-import { ErrorBanner, TableSkeleton } from "../../components/carbon/PageFeedback.js";
+import { AppModal } from "../../components/ui/AppModal.js";
 import { EmptyState } from "../../components/EmptyState.js";
+import { InteractiveTableRow } from "../../components/ui/InteractiveTableRow.js";
+import { ErrorBanner, TableSkeleton } from "../../components/ui/PageFeedback.js";
+import { DataPanel } from "../../components/ui/DataPanel.js";
+import { PageToolbar, PageToolbarGroup } from "../../components/ui/PageToolbar.js";
+import { EX } from "../../config/fieldExamples.js";
+import { DetailList } from "../../components/ui/DetailList.js";
+import { FortinoTextField } from "../../components/ui/FortinoTextField.js";
 import { useAuth } from "../../context/AuthContext.js";
 import { useToast } from "../../context/ToastContext.js";
 import { getErrorMessage } from "../../lib/errors.js";
 import { blockDigitsInName, email, nameField, password, required } from "../../lib/validation.js";
+
+const SELECT_CLASS =
+  "w-full rounded-lg border border-default-200 bg-background px-3 py-2 text-sm";
 
 const ROLE_NAMES: Record<string, string> = {
   admin: "Administrador",
@@ -140,11 +130,17 @@ export function EmployeesPage() {
 
   return (
     <div className="fortino-admin-page">
-      <div className="fortino-page-actions">
-        <Button kind="primary" renderIcon={Add} onClick={() => setModalOpen(true)}>
-          Agregar empleado
-        </Button>
-      </div>
+      <PageToolbar>
+        <PageToolbarGroup grow>
+          <p className="m-0 text-sm text-muted">{employees.length} empleado(s) registrado(s)</p>
+        </PageToolbarGroup>
+        <PageToolbarGroup>
+          <Button variant="primary" onPress={() => setModalOpen(true)}>
+            <Plus size={16} />
+            Agregar empleado
+          </Button>
+        </PageToolbarGroup>
+      </PageToolbar>
 
       {error && <ErrorBanner message={error} onClose={() => setError(null)} />}
 
@@ -158,46 +154,26 @@ export function EmployeesPage() {
           onAction={() => setModalOpen(true)}
         />
       ) : (
-        <div className="fortino-interactive-table">
-          <DataTable
-            rows={employees.map((e) => ({
-              id: e.id,
-              name: e.fullName,
-              email: e.email,
-              role: ROLE_NAMES[e.roleName] ?? e.roleName,
-              status: e.isActive ? "Activo" : "Inactivo",
-            }))}
-            headers={[
-              { key: "name", header: "Nombre" },
-              { key: "email", header: "Correo" },
-              { key: "role", header: "Rol" },
-              { key: "status", header: "Estado" },
-              TABLE_ACTIONS_RAIL,
-            ]}
-          >
-            {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
-              <Table {...getTableProps()}>
-                <TableHead>
-                  <TableRow>
-                    {headers.map((h) => (
-                      <TableHeader
-                        {...getHeaderProps({ header: h })}
-                        key={h.key}
-                        className={h.key === "_rail" ? "fortino-row-actions-cell" : undefined}
-                      >
-                        {h.header}
-                      </TableHeader>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => {
-                    const emp = employees.find((e) => e.id === row.id)!;
+        <DataPanel title="Equipo" description="Accesos al POS y panel administrativo" compact>
+          <div className="fortino-interactive-table">
+          <Table aria-label="Empleados">
+            <Table.ScrollContainer>
+              <Table.Content>
+                <Table.Header>
+                  <Table.Column isRowHeader>Nombre</Table.Column>
+                  <Table.Column>Correo</Table.Column>
+                  <Table.Column>Rol</Table.Column>
+                  <Table.Column>Estado</Table.Column>
+                  <Table.Column className="fortino-row-actions-cell" />
+                </Table.Header>
+                <Table.Body>
+                  {employees.map((emp) => {
                     const canDeactivate = emp.isActive && emp.id !== user?.id;
                     return (
                       <InteractiveTableRow
-                        key={row.id}
-                        rowProps={getRowProps({ row })}
+                        key={emp.id}
+                        id={emp.id}
+                        reserveActionsColumn
                         onOpen={() => setSelected(emp)}
                         actions={
                           canDeactivate
@@ -212,87 +188,90 @@ export function EmployeesPage() {
                         }
                         ariaLabel={`Empleado ${emp.fullName}`}
                       >
-                        {row.cells.map((cell) => {
-                          if (cell.info.header === "status") {
-                            return (
-                              <TableCell key={cell.id}>
-                                <Tag type={emp.isActive ? "green" : "gray"} size="sm">
-                                  {cell.value}
-                                </Tag>
-                              </TableCell>
-                            );
-                          }
-                          return <TableCell key={cell.id}>{cell.value}</TableCell>;
-                        })}
+                        <Table.Cell>{emp.fullName}</Table.Cell>
+                        <Table.Cell>{emp.email}</Table.Cell>
+                        <Table.Cell>{ROLE_NAMES[emp.roleName] ?? emp.roleName}</Table.Cell>
+                        <Table.Cell>
+                          <Chip color={emp.isActive ? "success" : "default"} size="sm">
+                            <Chip.Label>{emp.isActive ? "Activo" : "Inactivo"}</Chip.Label>
+                          </Chip>
+                        </Table.Cell>
                       </InteractiveTableRow>
                     );
                   })}
-                </TableBody>
-              </Table>
-            )}
-          </DataTable>
+                </Table.Body>
+              </Table.Content>
+            </Table.ScrollContainer>
+          </Table>
         </div>
+        </DataPanel>
       )}
 
       <AppModal
         open={modalOpen}
         title="Nuevo empleado"
-        subtitle="Asigna rol y contraseña temporal"
+        subtitle="El colaborador recibirá acceso al mostrador o al panel según su rol"
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
         loading={saving}
       >
-        <Stack gap={5}>
-          <TextInput
+        <div className="flex flex-col gap-5">
+          <FortinoTextField
             id="emp-name"
-            labelText="Nombre completo"
+            label="Nombre completo del colaborador"
+            placeholder={EX.employeeName}
             value={form.fullName}
-            onChange={(e) => setForm({ ...form, fullName: blockDigitsInName(e.target.value) })}
+            onChange={(next) => setForm({ ...form, fullName: blockDigitsInName(next) })}
             onBlur={() => touchField("fullName")}
-            invalid={Boolean(fieldErrors.fullName)}
-            invalidText={fieldErrors.fullName}
+            error={fieldErrors.fullName}
             helperText="Solo letras, sin números"
             required
           />
-          <TextInput
+          <FortinoTextField
             id="emp-email"
-            labelText="Correo"
+            label="Correo de acceso"
+            placeholder={EX.employeeEmail}
             type="email"
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value.trim().toLowerCase() })}
+            onChange={(next) => setForm({ ...form, email: next.trim().toLowerCase() })}
             onBlur={() => touchField("email")}
-            invalid={Boolean(fieldErrors.email)}
-            invalidText={fieldErrors.email}
+            error={fieldErrors.email}
             required
           />
-          <PasswordInput
+          <FortinoTextField
             id="emp-password"
-            labelText="Contraseña temporal"
+            label="Contraseña temporal inicial"
+            placeholder={EX.employeePassword}
+            type="password"
             value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            onChange={(next) => setForm({ ...form, password: next })}
             onBlur={() => touchField("password")}
-            invalid={Boolean(fieldErrors.password)}
-            invalidText={fieldErrors.password}
+            error={fieldErrors.password}
             helperText="Mínimo 6 caracteres, sin espacios"
             required
           />
-          <Select
-            id="emp-role"
-            labelText="Rol"
-            value={form.roleId}
-            onChange={(e) => setForm({ ...form, roleId: e.target.value })}
-            invalid={Boolean(fieldErrors.roleId)}
-            invalidText={fieldErrors.roleId}
-          >
-            {roles.map((role) => (
-              <SelectItem
-                key={role.id}
-                value={role.id}
-                text={`${ROLE_NAMES[role.name] ?? role.name}${role.description ? ` — ${role.description}` : ""}`}
-              />
-            ))}
-          </Select>
-        </Stack>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="emp-role" className="text-sm font-medium">
+              Rol y permisos
+            </label>
+            <select
+              id="emp-role"
+              className={SELECT_CLASS}
+              value={form.roleId}
+              onChange={(e) => setForm({ ...form, roleId: e.target.value })}
+            >
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {ROLE_NAMES[role.name] ?? role.name}
+                  {role.description ? ` — ${role.description}` : ""}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.roleId && (
+              <p className="text-sm text-danger">{fieldErrors.roleId}</p>
+            )}
+          </div>
+        </div>
       </AppModal>
 
       <AppModal
@@ -310,17 +289,26 @@ export function EmployeesPage() {
         cancelLabel="Cerrar"
       >
         {selected && (
-          <Stack gap={4}>
-            <p className="cds--body-compact-01" style={{ margin: 0 }}>
-              <strong>Nombre:</strong> {selected.fullName}
-            </p>
-            <p className="cds--body-compact-01" style={{ margin: 0 }}>
-              <strong>Rol:</strong> {ROLE_NAMES[selected.roleName] ?? selected.roleName}
-            </p>
-            <Tag type={selected.isActive ? "green" : "gray"} size="md">
-              {selected.isActive ? "Activo" : "Inactivo"}
-            </Tag>
-          </Stack>
+          <div className="flex flex-col gap-4">
+            <DetailList
+              items={[
+                { label: "Nombre completo", value: selected.fullName },
+                { label: "Correo de acceso", value: selected.email },
+                {
+                  label: "Rol asignado",
+                  value: ROLE_NAMES[selected.roleName] ?? selected.roleName,
+                },
+                {
+                  label: "Estado de la cuenta",
+                  value: (
+                    <Chip color={selected.isActive ? "success" : "default"} size="sm">
+                      <Chip.Label>{selected.isActive ? "Activo" : "Inactivo"}</Chip.Label>
+                    </Chip>
+                  ),
+                },
+              ]}
+            />
+          </div>
         )}
       </AppModal>
     </div>

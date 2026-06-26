@@ -15,6 +15,13 @@
       "when": 1748048400000,
       "tag": "0001_sale_payment_status",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1748221200000,
+      "tag": "0003_brands_catalog",
+      "breakpoints": true
     }
   ]
 }

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, IconButton, Tag, Tile } from "@carbon/react";
-import { Add, ShoppingCart, Subtract, TrashCan } from "@carbon/icons-react";
+import { Button, Chip } from "@heroui/react";
+import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useCart } from "../context/CartContext.js";
 import { useToast } from "../context/ToastContext.js";
 import { useShiftStatus } from "../hooks/useShiftStatus.js";
 import { ProductSearch, type ProductSearchHandle } from "../components/ProductSearch.js";
 import { CheckoutModal } from "../components/CheckoutModal.js";
-import { AppModal } from "../components/carbon/AppModal.js";
+import { AppModal } from "../components/ui/AppModal.js";
 
 export function PosPage() {
   const { lines, subtotal, total, itemCount, addProduct, updateQty, removeLine, clear } =
@@ -82,23 +82,25 @@ export function PosPage() {
         <div className="fortino-pos-cart-header">
           <h2 className="fortino-pos-cart-title">Carrito</h2>
           {itemCount > 0 && (
-            <Tag type="blue" size="sm">
-              {itemCount} pieza{itemCount !== 1 ? "s" : ""}
-            </Tag>
+            <Chip color="accent" size="sm">
+              <Chip.Label>
+                {itemCount} pieza{itemCount !== 1 ? "s" : ""}
+              </Chip.Label>
+            </Chip>
           )}
         </div>
 
         {lines.length === 0 ? (
-          <Tile className="fortino-pos-empty">
+          <div className="fortino-pos-empty">
             <ShoppingCart size={40} aria-hidden className="fortino-pos-empty-icon" />
             <h3 className="fortino-heading-subsection">Carrito vacío</h3>
             <p className="fortino-lead">
               Escanea un código de barras o busca una pieza para comenzar la venta.
             </p>
-            <p className="fortino-pos-kbd-hint cds--label">
+            <p className="fortino-pos-kbd-hint fortino-caption">
               <kbd>F2</kbd> buscar · <kbd>F9</kbd> cobrar
             </p>
-          </Tile>
+          </div>
         ) : (
           <ul className="fortino-cart-lines">
             {lines.map((line) => {
@@ -112,48 +114,48 @@ export function PosPage() {
                   <div className="fortino-cart-line-info">
                     <span className="fortino-cart-line-sku sku">{line.sku}</span>
                     <span className="fortino-cart-line-name">{line.productName}</span>
-                    <span className="fortino-cart-line-unit cds--label">
+                    <span className="fortino-cart-line-unit fortino-caption">
                       ${line.unitPrice.toFixed(2)} c/u
                       {nearMax && (
-                        <Tag type="red" size="sm" className="fortino-cart-stock-tag">
-                          máx. {line.maxStock}
-                        </Tag>
+                        <Chip color="danger" size="sm" className="fortino-cart-stock-tag">
+                          <Chip.Label>máx. {line.maxStock}</Chip.Label>
+                        </Chip>
                       )}
                     </span>
                   </div>
 
                   <div className="fortino-cart-qty">
-                    <IconButton
-                      kind="ghost"
-                      size="md"
-                      label="Disminuir cantidad"
-                      onClick={() => handleQty(line.sku, line.quantity - 1)}
+                    <Button
+                      variant="ghost"
+                      isIconOnly
+                      aria-label="Disminuir cantidad"
+                      onPress={() => handleQty(line.sku, line.quantity - 1)}
                     >
-                      <Subtract size={18} />
-                    </IconButton>
+                      <Minus size={18} />
+                    </Button>
                     <span className="fortino-cart-qty-value mono">{line.quantity}</span>
-                    <IconButton
-                      kind="ghost"
-                      size="md"
-                      label="Aumentar cantidad"
-                      disabled={nearMax}
-                      onClick={() => handleQty(line.sku, line.quantity + 1, line.maxStock)}
+                    <Button
+                      variant="ghost"
+                      isIconOnly
+                      aria-label="Aumentar cantidad"
+                      isDisabled={nearMax}
+                      onPress={() => handleQty(line.sku, line.quantity + 1, line.maxStock)}
                     >
-                      <Add size={18} />
-                    </IconButton>
+                      <Plus size={18} />
+                    </Button>
                   </div>
 
                   <span className="fortino-cart-line-total price">${lineTotal.toFixed(2)}</span>
 
-                  <IconButton
-                    kind="ghost"
-                    size="md"
-                    label="Quitar del carrito"
+                  <Button
+                    variant="ghost"
+                    isIconOnly
+                    aria-label="Quitar del carrito"
                     className="fortino-cart-remove"
-                    onClick={() => removeLine(line.sku)}
+                    onPress={() => removeLine(line.sku)}
                   >
-                    <TrashCan size={18} />
-                  </IconButton>
+                    <Trash2 size={18} />
+                  </Button>
                 </li>
               );
             })}
@@ -174,7 +176,7 @@ export function PosPage() {
 
           <div className="fortino-pos-totals">
             <div className="fortino-pos-total-row">
-              <span className="cds--label">Subtotal</span>
+              <span className="fortino-caption">Subtotal</span>
               <span className="fortino-pos-subtotal price">${subtotal.toFixed(2)}</span>
             </div>
             <div className="fortino-pos-total-row fortino-pos-total-row--grand">
@@ -185,11 +187,11 @@ export function PosPage() {
 
           <div className="fortino-pos-checkout-actions">
             <Button
-              kind="primary"
+              variant="primary"
               size="lg"
               className="fortino-pos-pay-btn"
-              disabled={lines.length === 0 || shiftLoading || hasShift === false}
-              onClick={openCheckout}
+              isDisabled={lines.length === 0 || shiftLoading || hasShift === false}
+              onPress={openCheckout}
             >
               Cobrar ${total.toFixed(2)}
             </Button>
@@ -198,13 +200,13 @@ export function PosPage() {
                 Abre turno en Caja para habilitar cobro
               </p>
             )}
-            <span className="fortino-pos-kbd-hint cds--label">
+            <span className="fortino-pos-kbd-hint fortino-caption">
               Atajo: <kbd>F9</kbd>
             </span>
             <Button
-              kind="tertiary"
-              disabled={lines.length === 0}
-              onClick={() => setClearConfirmOpen(true)}
+              variant="tertiary"
+              isDisabled={lines.length === 0}
+              onPress={() => setClearConfirmOpen(true)}
             >
               Vaciar carrito
             </Button>
@@ -224,14 +226,14 @@ export function PosPage() {
       <AppModal
         open={clearConfirmOpen}
         title="Vaciar carrito"
-        subtitle="Se quitarán todas las piezas del ticket actual."
+        subtitle="Esta acción no se puede deshacer · el ticket quedará en cero"
         onClose={() => setClearConfirmOpen(false)}
         onSubmit={handleClear}
         submitLabel="Vaciar"
         danger
-        size="xs"
+        size="sm"
       >
-        <p className="cds--body-compact-01" style={{ margin: 0 }}>
+        <p className="text-sm m-0">
           ¿Confirmas que deseas eliminar {itemCount} pieza{itemCount !== 1 ? "s" : ""} del carrito?
         </p>
       </AppModal>

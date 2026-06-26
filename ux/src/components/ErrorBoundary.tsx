@@ -1,7 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Button, InlineNotification } from "@carbon/react";
+import { Alert, Button } from "@heroui/react";
 
-type Props = { children: ReactNode; fallbackTitle?: string };
+type Props = { children: ReactNode };
 type State = { error: Error | null };
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -12,24 +12,24 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("[Fortino]", error, info.componentStack);
+    console.error("ErrorBoundary:", error, info);
   }
 
   render() {
     if (this.state.error) {
       return (
-        <div style={{ padding: "2rem", maxWidth: 560, margin: "0 auto" }}>
-          <InlineNotification
-            kind="error"
-            title={this.props.fallbackTitle ?? "Algo salió mal"}
-            subtitle={this.state.error.message}
-            lowContrast
-            hideCloseButton
-          />
+        <div className="p-6">
+          <Alert status="danger">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>Error inesperado</Alert.Title>
+              <Alert.Description>{this.state.error.message}</Alert.Description>
+            </Alert.Content>
+          </Alert>
           <Button
-            kind="secondary"
-            style={{ marginTop: "1rem" }}
-            onClick={() => this.setState({ error: null })}
+            variant="primary"
+            className="mt-4"
+            onPress={() => this.setState({ error: null })}
           >
             Reintentar
           </Button>

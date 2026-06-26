@@ -11,6 +11,25 @@ export type ModuleWalkthrough = {
 };
 
 export const MODULE_WALKTHROUGHS: Record<string, ModuleWalkthrough> = {
+  "/login": {
+    id: "login",
+    title: "Iniciar sesión",
+    summary: "Accede al mostrador o al panel administrativo según tu rol.",
+    steps: [
+      {
+        title: "Credenciales",
+        body: "Usa el correo y contraseña que te asignó el administrador. Si olvidaste la contraseña, pide un restablecimiento.",
+      },
+      {
+        title: "Destino según rol",
+        body: "Los cajeros entran al mostrador para cobrar. Los administradores van al panel de control con métricas y catálogo.",
+      },
+      {
+        title: "Tema y accesibilidad",
+        body: "Arriba a la derecha puedes cambiar entre tema claro y oscuro. El sistema recuerda tu preferencia.",
+      },
+    ],
+  },
   "/app": {
     id: "dashboard",
     title: "Panel de control",
@@ -129,7 +148,7 @@ export const MODULE_WALKTHROUGHS: Record<string, ModuleWalkthrough> = {
       },
       {
         title: "Exportar",
-        body: "Con permiso de reportes, descarga CSV para contabilidad o respaldo del periodo filtrado.",
+        body: "Con permiso de reportes, descarga un PDF del periodo filtrado para contabilidad o respaldo.",
       },
     ],
   },
@@ -149,6 +168,101 @@ export const MODULE_WALKTHROUGHS: Record<string, ModuleWalkthrough> = {
       {
         title: "Desactivar",
         body: "Haz clic en un empleado para ver su detalle. Usa el icono de usuario con menos al pasar el mouse para desactivar acceso.",
+      },
+    ],
+  },
+  "/app/marcas": {
+    id: "marcas",
+    title: "Marcas",
+    summary: "Catálogo de fabricantes reutilizable en productos.",
+    steps: [
+      {
+        title: "Crear marca",
+        body: "Indica el nombre comercial (ej. Brembo, Bosch). El identificador web se genera para uso interno.",
+      },
+      {
+        title: "Asignar en productos",
+        body: "En Productos elige la marca desde el listado; evita escribir texto distinto cada vez.",
+      },
+      {
+        title: "Activar o desactivar",
+        body: "Las marcas inactivas no aparecen al crear productos, pero se conservan en el historial.",
+      },
+    ],
+  },
+  "/app/proveedores": {
+    id: "proveedores",
+    title: "Proveedores",
+    summary: "Quién te surte refacciones y datos de contacto.",
+    steps: [
+      {
+        title: "Registrar proveedor",
+        body: "Captura razón social, contacto, teléfono y correo para localizarlo al registrar compras.",
+      },
+      {
+        title: "Compras",
+        body: "Cada entrada de mercancía se liga a un proveedor en el módulo Compras.",
+      },
+      {
+        title: "Editar",
+        body: "Haz clic en una fila para actualizar datos o marcar inactivo si ya no surte.",
+      },
+    ],
+  },
+  "/app/compras": {
+    id: "compras",
+    title: "Compras a proveedor",
+    summary: "Registra entradas de mercancía y actualiza inventario automáticamente.",
+    steps: [
+      {
+        title: "Nueva compra",
+        body: "Elige proveedor, fecha y referencia de factura. Agrega líneas con producto, cantidad y costo unitario.",
+      },
+      {
+        title: "Stock y costo",
+        body: "Al confirmar, el stock sube y el precio de compra del producto se actualiza con el último costo.",
+      },
+      {
+        title: "Historial",
+        body: "La tabla inferior muestra compras recientes con total y estado.",
+      },
+    ],
+  },
+  "/app/imagenes": {
+    id: "imagenes",
+    title: "Biblioteca de imágenes",
+    summary: "Sube y busca fotos para asignarlas a productos.",
+    steps: [
+      {
+        title: "Subir imagen",
+        body: "Usa «Subir» para agregar JPG, PNG o WebP (máx. 1.5 MB). Pon nombre y etiquetas para encontrarla después.",
+      },
+      {
+        title: "Buscar",
+        body: "Filtra por nombre o etiqueta (ej. frenos, aceite) antes de asignar a un producto.",
+      },
+      {
+        title: "Asignar a producto",
+        body: "En Productos → editar → «Elegir de biblioteca». También puedes abrir el selector desde aquí.",
+      },
+    ],
+  },
+  "/sincronizacion": {
+    id: "sincronizacion",
+    title: "Cola de sincronización",
+    summary: "Ventas guardadas offline hasta que lleguen al servidor.",
+    steps: [
+      {
+        title: "Pendientes",
+        body: "Si no hay red, las ventas se encolan aquí. El badge en la barra inferior muestra cuántas faltan.",
+      },
+      {
+        title: "Sincronizar",
+        body: "Con conexión, pulsa «Sincronizar todo» o usa el botón del banner superior.",
+      },
+      {
+        title: "Errores",
+        body: "Si una venta falla, revisa el mensaje, reintenta o descarta duplicados.",
       },
     ],
   },
@@ -215,14 +329,44 @@ export const MODULE_WALKTHROUGHS: Record<string, ModuleWalkthrough> = {
   },
 };
 
+/** Guía genérica cuando no hay walkthrough específico del módulo. */
+export const DEFAULT_WALKTHROUGH: ModuleWalkthrough = {
+  id: "general",
+  title: "Ayuda de Refaccionaria Fortino",
+  summary: "Resumen rápido de navegación y soporte.",
+  steps: [
+    {
+      title: "Navegación",
+      body: "Usa el menú lateral (admin) o la barra inferior (mostrador) para cambiar de módulo.",
+    },
+    {
+      title: "Permisos",
+      body: "Solo verás opciones según tu rol. Si falta algo, pide acceso al administrador.",
+    },
+    {
+      title: "Conexión",
+      body: "Sin internet el mostrador sigue vendiendo; sincroniza después en la pestaña Sync.",
+    },
+    {
+      title: "Más ayuda",
+      body: "Cada pantalla tiene su propia guía paso a paso. Vuelve a pulsar Ayuda cuando cambies de módulo.",
+    },
+  ],
+};
+
 export function resolveWalkthroughKey(pathname: string): string {
-  if (pathname === "/app" || pathname === "/app/") return "/app";
-  if (pathname.startsWith("/app/")) {
-    const segment = pathname.split("/")[2];
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  if (normalized === "/app") return "/app";
+  if (normalized.startsWith("/app/")) {
+    const segment = normalized.split("/")[2];
     const key = `/app/${segment}`;
     if (MODULE_WALKTHROUGHS[key]) return key;
   }
-  if (pathname === "/" || pathname === "") return "/";
-  if (MODULE_WALKTHROUGHS[pathname]) return pathname;
-  return "/app";
+  if (MODULE_WALKTHROUGHS[normalized]) return normalized;
+  return normalized;
+}
+
+export function getWalkthrough(pathname: string): ModuleWalkthrough {
+  const key = resolveWalkthroughKey(pathname);
+  return MODULE_WALKTHROUGHS[key] ?? DEFAULT_WALKTHROUGH;
 }

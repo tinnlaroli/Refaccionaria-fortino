@@ -1,0 +1,105 @@
+[
+  {
+    "slug": "aceite-motor",
+    "name": "Demo · Aceite de motor 5W30",
+    "tags": ["aceite", "lubricante", "motor", "demo"],
+    "commonsFile": "Woltec Motor Oil ULTRAtec 5w30 API SN Fully Synthetic.jpg",
+    "thumbUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Woltec_Motor_Oil_ULTRAtec_5w30_API_SN_Fully_Synthetic.jpg/960px-Woltec_Motor_Oil_ULTRAtec_5w30_API_SN_Fully_Synthetic.jpg",
+    "author": "Woltec (vía Wikimedia Commons)",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "productSku": "ACE-5W30-1L"
+  },
+  {
+    "slug": "filtro-aceite",
+    "name": "Demo · Filtro de aceite",
+    "tags": ["filtro", "aceite", "motor", "demo"],
+    "commonsFile": "Engine_oil_filter.JPG",
+    "thumbUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Engine_oil_filter.JPG/960px-Engine_oil_filter.JPG",
+    "author": "Dvortygirl",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "productSku": "FLT-001"
+  },
+  {
+    "slug": "pastillas-freno",
+    "name": "Demo · Pastillas de freno",
+    "tags": ["frenos", "pastillas", "demo"],
+    "commonsFile": "Brake_pad.jpg",
+    "thumbUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Brake_pad.jpg/960px-Brake_pad.jpg",
+    "author": "A7N8X",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "productSku": "FRE-PAST-01"
+  },
+  {
+    "slug": "disco-freno",
+    "name": "Demo · Disco de freno",
+    "tags": ["frenos", "disco", "demo"],
+    "commonsFile": "Disc brake.jpg",
+    "thumbUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Disc_brake.jpg/960px-Disc_brake.jpg",
+    "author": "Maksim",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+  },
+  {
+    "slug": "filtro-aire",
+    "name": "Demo · Filtro de aire",
+    "tags": ["filtro", "aire", "motor", "demo"],
+    "commonsFile": "Air filter for Toyota 1KR-FE.jpg",
+    "thumbUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Air_filter_for_Toyota_1KR-FE.jpg/960px-Air_filter_for_Toyota_1KR-FE.jpg",
+    "author": "Syced",
+    "license": "CC0 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "slug": "bujia",
+    "name": "Demo · Bujías",
+    "tags": ["encendido", "bujia", "motor", "demo"],
+    "commonsFile": "Spark plugs.jpg",
+    "thumbUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Spark_plugs.jpg/960px-Spark_plugs.jpg",
+    "author": "Morio",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+  },
+  {
+    "slug": "bateria-auto",
+    "name": "Demo · Batería automotriz",
+    "tags": ["bateria", "electrico", "demo"],
+    "commonsFile": "Car battery.jpg",
+    "thumbUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Car_battery.jpg/960px-Car_battery.jpg",
+    "author": "Tomasz Sienicki",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "slug": "limpiaparabrisas",
+    "name": "Demo · Limpiaparabrisas",
+    "tags": ["limpiaparabrisas", "accesorios", "demo"],
+    "commonsFile": "Used Michelin 8019 windshield wiper blade tip.jpg",
+    "thumbUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Used_Michelin_8019_windshield_wiper_blade_tip.jpg/960px-Used_Michelin_8019_windshield_wiper_blade_tip.jpg",
+    "author": "Raysonho @ Open Grid Scheduler / Grid Engine",
+    "license": "CC0 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "slug": "anticongelante",
+    "name": "Demo · Anticongelante",
+    "tags": ["refrigerante", "anticongelante", "demo"],
+    "commonsFile": "Antifreeze.jpg",
+    "thumbUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Antifreeze.jpg/960px-Antifreeze.jpg",
+    "author": "Tomasz Sienicki",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "slug": "amortiguador",
+    "name": "Demo · Amortiguador (strut)",
+    "tags": ["suspension", "amortiguador", "demo"],
+    "commonsFile": "Mcpherson strut.jpg",
+    "thumbUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Mcpherson_strut.jpg",
+    "author": "Maksim",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+  }
+]

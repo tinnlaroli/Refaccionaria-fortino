@@ -21,3 +21,11 @@ Variable requerida: `DATABASE_URL` (PostgreSQL).
 
 - Admin: `admin@fortino.local` / `admin123`
 - Cajero: `cajero@fortino.local` / `cajero123`
+
+## Biblioteca demo de imágenes
+
+El seed carga **10 fotos genéricas** de [Wikimedia Commons](https://commons.wikimedia.org/) en `media_assets` y las asigna a los productos demo (aceite, filtro, pastillas).
+
+- Archivos: `seed/media/*.jpg`
+- Manifiesto y licencias: `seed/media/manifest.json`, `seed/media/ATTRIBUTIONS.md`
+- Regenerar binarios: `npm run fetch:stock-media` (requiere red; respeta rate limits de Wikimedia)

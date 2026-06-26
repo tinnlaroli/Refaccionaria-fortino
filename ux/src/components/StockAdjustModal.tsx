@@ -1,14 +1,11 @@
 import { useState } from "react";
-import {
-  InlineNotification,
-  NumberInput,
-  Select,
-  SelectItem,
-  Stack,
-  TextInput,
-} from "@carbon/react";
+import { Alert } from "@heroui/react";
 import type { AdminProduct } from "../api/admin-products.js";
-import { AppModal } from "./carbon/AppModal.js";
+import { AppModal } from "./ui/AppModal.js";
+import { EX } from "../config/fieldExamples.js";
+import { FortinoNumberField } from "./ui/FortinoNumberField.js";
+import { FortinoSelect } from "./ui/FortinoSelect.js";
+import { FortinoTextField } from "./ui/FortinoTextField.js";
 import {
   combine,
   nonNegativeInt,
@@ -42,23 +39,21 @@ type Props = {
 
 export function StockAdjustModal({ product, onClose, onSubmit }: Props) {
   const [mode, setMode] = useState<"add" | "remove" | "set">("add");
-  const [quantity, setQuantity] = useState<string | number>(1);
-  const [setValue, setSetValue] = useState<string | number>(product.stock);
+  const [quantity, setQuantity] = useState(1);
+  const [setValue, setSetValue] = useState(product.stock);
   const [reason, setReason] = useState<StockAdjustPayload["reason"]>("entrada");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FormFields, string>>>({});
 
-  const qtyNum = Number(quantity) || 0;
-  const setNum = Number(setValue) || 0;
   const previewStock =
-    mode === "set" ? setNum : mode === "add" ? product.stock + qtyNum : product.stock - qtyNum;
+    mode === "set" ? setValue : mode === "add" ? product.stock + quantity : product.stock - quantity;
 
   const getErrors = (): Partial<Record<FormFields, string>> => {
     const errors: Partial<Record<FormFields, string>> = {};
     if (mode === "set") {
-      const err = nonNegativeInt(setNum, "Nuevo stock");
+      const err = nonNegativeInt(setValue, "Nuevo stock");
       if (err) errors.setValue = err;
     } else {
       const err = positiveInt(quantity, "Cantidad");
@@ -80,9 +75,9 @@ export function StockAdjustModal({ product, onClose, onSubmit }: Props) {
     if (Object.keys(next).length > 0) return false;
 
     let delta = 0;
-    if (mode === "add") delta = qtyNum;
-    else if (mode === "remove") delta = -qtyNum;
-    else delta = setNum - product.stock;
+    if (mode === "add") delta = quantity;
+    else if (mode === "remove") delta = -quantity;
+    else delta = setValue - product.stock;
 
     if (delta === 0) {
       setFormError("No hay cambio en el stock");
@@ -111,9 +106,9 @@ export function StockAdjustModal({ product, onClose, onSubmit }: Props) {
     setSaving(true);
     try {
       let delta = 0;
-      if (mode === "add") delta = qtyNum;
-      else if (mode === "remove") delta = -qtyNum;
-      else delta = setNum - product.stock;
+      if (mode === "add") delta = quantity;
+      else if (mode === "remove") delta = -quantity;
+      else delta = setValue - product.stock;
 
       await onSubmit({ delta, reason, note: note.trim() || undefined });
       onClose();
@@ -128,20 +123,22 @@ export function StockAdjustModal({ product, onClose, onSubmit }: Props) {
     <AppModal
       open
       title="Ajustar inventario"
-      subtitle={`${product.sku} — ${product.name}`}
+      subtitle={`${product.sku} · ${product.name} · indica motivo para auditoría`}
+      size="md"
       onClose={onClose}
       onSubmit={handleSubmit}
       submitLabel="Confirmar ajuste"
       loading={saving}
     >
-      <Stack gap={5}>
-        <p className="cds--body-compact-01" style={{ margin: 0, color: "var(--cds-text-secondary)" }}>
+      <div className="flex flex-col gap-5">
+        <p className="text-sm m-0 text-muted">
           Stock actual: <strong>{product.stock}</strong> · Mínimo: {product.minStock}
         </p>
 
-        <Select
+        <FortinoSelect
           id="adjust-mode"
-          labelText="Tipo de movimiento"
+          label="Tipo de ajuste de inventario"
+          helperText="Entrada suma piezas, salida resta, fijar establece el total exacto"
           value={mode}
           onChange={(e) => {
             setMode(e.target.value as "add" | "remove" | "set");
@@ -149,81 +146,90 @@ export function StockAdjustModal({ product, onClose, onSubmit }: Props) {
             setFormError(null);
           }}
         >
-          <SelectItem value="add" text="Entrada (+)" />
-          <SelectItem value="remove" text="Salida (−)" />
-          <SelectItem value="set" text="Fijar cantidad exacta" />
-        </Select>
+          <option value="add">Entrada (+)</option>
+          <option value="remove">Salida (−)</option>
+          <option value="set">Fijar cantidad exacta</option>
+        </FortinoSelect>
 
         {mode === "set" ? (
-          <NumberInput
+          <FortinoNumberField
             id="adjust-set"
-            label="Nuevo stock"
-            min={0}
-            step={1}
+            label="Existencia final deseada"
+            placeholder={EX.adjustStock}
+            format="integer"
             value={setValue}
-            onChange={(_, { value }) => setSetValue(value)}
+            onChange={(value) => setSetValue(value ?? 0)}
             onBlur={() => touchField("setValue")}
-            invalid={Boolean(fieldErrors.setValue)}
-            invalidText={fieldErrors.setValue}
+            minValue={0}
+            error={fieldErrors.setValue}
             required
           />
         ) : (
-          <NumberInput
+          <FortinoNumberField
             id="adjust-qty"
-            label="Cantidad"
-            min={1}
-            step={1}
+            label="Piezas a mover"
+            placeholder={EX.adjustQty}
+            format="integer"
             value={quantity}
-            onChange={(_, { value }) => setQuantity(value)}
+            onChange={(value) => setQuantity(value ?? 1)}
             onBlur={() => touchField("quantity")}
-            invalid={Boolean(fieldErrors.quantity)}
-            invalidText={fieldErrors.quantity}
+            minValue={1}
+            error={fieldErrors.quantity}
             required
           />
         )}
 
-        <Select
+        <FortinoSelect
           id="adjust-reason"
-          labelText="Motivo"
+          label="Motivo del movimiento"
+          helperText="Obligatorio para trazabilidad en el historial"
           value={reason}
           onChange={(e) => {
             setReason(e.target.value as StockAdjustPayload["reason"]);
             touchField("reason");
           }}
           onBlur={() => touchField("reason")}
-          invalid={Boolean(fieldErrors.reason)}
-          invalidText={fieldErrors.reason}
+          error={fieldErrors.reason}
           required
         >
           {REASONS.map((r) => (
-            <SelectItem key={r.value} value={r.value} text={r.label} />
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
           ))}
-        </Select>
+        </FortinoSelect>
 
-        <TextInput
+        <FortinoTextField
           id="adjust-note"
-          labelText={reason === "otro" ? "Nota" : "Nota (opcional)"}
+          label={reason === "otro" ? "Nota" : "Nota (opcional)"}
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={setNote}
           onBlur={() => touchField("note")}
-          invalid={Boolean(fieldErrors.note)}
-          invalidText={fieldErrors.note}
-          placeholder="Ej. llegada de proveedor, conteo mensual…"
+          error={fieldErrors.note}
+          placeholder={EX.adjustNote}
           required={reason === "otro"}
         />
 
-        <InlineNotification
-          kind="info"
-          title="Stock resultante"
-          subtitle={`${previewStock} unidades después del ajuste`}
-          lowContrast
-          hideCloseButton
-        />
+        <Alert status="accent">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>Stock resultante</Alert.Title>
+            <Alert.Description>
+              {previewStock} unidades después del ajuste
+            </Alert.Description>
+          </Alert.Content>
+        </Alert>
 
         {formError && (
-          <InlineNotification kind="error" title="Error" subtitle={formError} lowContrast hideCloseButton />
+          <Alert status="danger">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>Error</Alert.Title>
+              <Alert.Description>{formError}</Alert.Description>
+            </Alert.Content>
+          </Alert>
         )}
-      </Stack>
+      </div>
     </AppModal>
   );
 }

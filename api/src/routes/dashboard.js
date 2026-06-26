@@ -2,6 +2,7 @@ import {
   cashShifts,
   categories,
   products,
+  purchases,
   sales,
   saleItems,
   users,
@@ -15,6 +16,15 @@ const router = Router();
 
 function hasPerm(user, key) {
   return user?.permissions?.includes(key);
+}
+
+function dayBounds(offsetDays = 0) {
+  const start = new Date();
+  start.setDate(start.getDate() - offsetDays);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
 }
 
 function last7DayKeys() {
@@ -35,11 +45,10 @@ router.get(
     const canViewProducts = hasPerm(req.user, "products.view");
     const canViewSales = hasPerm(req.user, "sales.view_all");
     const canManageUsers = hasPerm(req.user, "users.manage");
+    const canViewPurchases = hasPerm(req.user, "purchases.view");
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    const { start: startOfDay, end: endOfDay } = dayBounds(0);
+    const { start: startOfYesterday, end: endOfYesterday } = dayBounds(1);
 
     const payload = {
       meta: {
@@ -47,6 +56,7 @@ router.get(
         canViewProducts,
         canViewSales,
         canManageUsers,
+        canViewPurchases,
       },
     };
 
@@ -92,6 +102,19 @@ router.get(
       };
       payload.categories = Number(categoryCount?.total ?? 0);
       payload.lowStockItems = lowStockItems;
+
+      const [inventoryValue] = await db
+        .select({
+          atCost: sql`coalesce(sum(${products.stock} * ${products.purchasePrice}), 0)`,
+          atSale: sql`coalesce(sum(${products.stock} * ${products.salePrice}), 0)`,
+        })
+        .from(products)
+        .where(eq(products.isActive, true));
+
+      payload.inventoryValue = {
+        atCost: Number(inventoryValue?.atCost ?? 0),
+        atSale: Number(inventoryValue?.atSale ?? 0),
+      };
     }
 
     if (canManageUsers) {
@@ -134,6 +157,20 @@ router.get(
           ),
         );
 
+      const [salesYesterday] = await db
+        .select({
+          count: count(),
+          total: sql`coalesce(sum(${sales.total}), 0)`,
+        })
+        .from(sales)
+        .where(
+          and(
+            gte(sales.soldAt, startOfYesterday),
+            lte(sales.soldAt, endOfYesterday),
+            eq(sales.status, "completed"),
+          ),
+        );
+
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
       sevenDaysAgo.setHours(0, 0, 0, 0);
@@ -165,11 +202,64 @@ router.get(
         count: Number(salesToday?.count ?? 0),
         total: Number(salesToday?.total ?? 0),
       };
+      payload.salesYesterday = {
+        count: Number(salesYesterday?.count ?? 0),
+        total: Number(salesYesterday?.total ?? 0),
+      };
+
+      const paymentRows = await db
+        .select({
+          method: sales.paymentMethod,
+          count: count(),
+          total: sql`coalesce(sum(${sales.total}), 0)`,
+        })
+        .from(sales)
+        .where(
+          and(
+            gte(sales.soldAt, sevenDaysAgo),
+            eq(sales.status, "completed"),
+          ),
+        )
+        .groupBy(sales.paymentMethod);
+
+      payload.paymentBreakdown7Days = paymentRows.map((row) => ({
+        method: row.method,
+        count: Number(row.count),
+        total: Number(row.total),
+      }));
+
+      const topProductRows = await db
+        .select({
+          productName: saleItems.productName,
+          quantity: sql`coalesce(sum(${saleItems.quantity}), 0)`,
+          revenue: sql`coalesce(sum(${saleItems.quantity} * ${saleItems.unitPrice}), 0)`,
+        })
+        .from(saleItems)
+        .innerJoin(sales, eq(saleItems.saleId, sales.id))
+        .where(
+          and(
+            gte(sales.soldAt, sevenDaysAgo),
+            eq(sales.status, "completed"),
+          ),
+        )
+        .groupBy(saleItems.productName)
+        .orderBy(sql`sum(${saleItems.quantity}) desc`)
+        .limit(6);
+
+      payload.topProducts7Days = topProductRows.map((row) => ({
+        productName: row.productName,
+        quantity: Number(row.quantity),
+        revenue: Number(row.revenue),
+      }));
       payload.salesTrend7Days = last7DayKeys().map((date) => ({
         date,
         count: trendMap.get(date)?.count ?? 0,
         total: trendMap.get(date)?.total ?? 0,
       }));
+      payload.salesWeek = {
+        count: payload.salesTrend7Days.reduce((sum, d) => sum + d.count, 0),
+        total: payload.salesTrend7Days.reduce((sum, d) => sum + d.total, 0),
+      };
 
       const recentSalesRows = await db
         .select({
@@ -210,6 +300,30 @@ router.get(
           quantity: Number(i.quantity),
         })),
       }));
+    }
+
+    if (canViewPurchases) {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const [purchaseMonth] = await db
+        .select({
+          count: count(),
+          total: sql`coalesce(sum(${purchases.totalCost}), 0)`,
+        })
+        .from(purchases)
+        .where(
+          and(
+            gte(purchases.purchasedAt, monthStart),
+            eq(purchases.status, "completed"),
+          ),
+        );
+
+      payload.purchasesMonth = {
+        count: Number(purchaseMonth?.count ?? 0),
+        total: Number(purchaseMonth?.total ?? 0),
+      };
     }
 
     res.json(payload);

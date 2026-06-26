@@ -40,6 +40,12 @@ export const saleStatusEnum = pgEnum("sale_status", [
   "cancelled",
 ]);
 
+export const purchaseStatusEnum = pgEnum("purchase_status", [
+  "draft",
+  "completed",
+  "cancelled",
+]);
+
 export const roles = pgTable("roles", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
@@ -108,6 +114,65 @@ export const categories = pgTable(
   (table) => [uniqueIndex("categories_slug_idx").on(table.slug)],
 );
 
+export const suppliers = pgTable(
+  "suppliers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    contactName: text("contact_name"),
+    email: text("email"),
+    phone: text("phone"),
+    address: text("address"),
+    notes: text("notes"),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("suppliers_name_idx").on(table.name)],
+);
+
+export const brands = pgTable(
+  "brands",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("brands_slug_idx").on(table.slug),
+    index("brands_name_idx").on(table.name),
+  ],
+);
+
+export const mediaAssets = pgTable(
+  "media_assets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    tags: text("tags").array().notNull().default([]),
+    mimeType: text("mime_type").notNull(),
+    url: text("url").notNull(),
+    uploadedBy: uuid("uploaded_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("media_assets_name_idx").on(table.name)],
+);
+
 export const products = pgTable(
   "products",
   {
@@ -126,6 +191,13 @@ export const products = pgTable(
       .default("0"),
     stock: integer("stock").notNull().default(0),
     minStock: integer("min_stock").notNull().default(0),
+    unitOfMeasure: text("unit_of_measure").notNull().default("PZA"),
+    brandId: uuid("brand_id").references(() => brands.id, { onDelete: "set null" }),
+    presentation: text("presentation"),
+    vehicleCompatibility: text("vehicle_compatibility"),
+    primaryMediaId: uuid("primary_media_id").references(() => mediaAssets.id, {
+      onDelete: "set null",
+    }),
     isActive: boolean("is_active").notNull().default(true),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
@@ -148,9 +220,58 @@ export const productImages = pgTable(
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
     url: text("url").notNull(),
+    mediaAssetId: uuid("media_asset_id").references(() => mediaAssets.id, {
+      onDelete: "set null",
+    }),
     sortOrder: integer("sort_order").notNull().default(0),
   },
   (table) => [index("product_images_product_idx").on(table.productId)],
+);
+
+export const purchases = pgTable(
+  "purchases",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    supplierId: uuid("supplier_id")
+      .notNull()
+      .references(() => suppliers.id),
+    referenceNumber: text("reference_number"),
+    purchasedAt: timestamp("purchased_at", { withTimezone: true }).notNull(),
+    receivedBy: uuid("received_by")
+      .notNull()
+      .references(() => users.id),
+    notes: text("notes"),
+    status: purchaseStatusEnum("status").notNull().default("completed"),
+    totalCost: numeric("total_cost", { precision: 12, scale: 2 })
+      .notNull()
+      .default("0"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("purchases_supplier_idx").on(table.supplierId),
+    index("purchases_purchased_at_idx").on(table.purchasedAt),
+  ],
+);
+
+export const purchaseItems = pgTable(
+  "purchase_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    purchaseId: uuid("purchase_id")
+      .notNull()
+      .references(() => purchases.id, { onDelete: "cascade" }),
+    productId: uuid("product_id").references(() => products.id, {
+      onDelete: "set null",
+    }),
+    sku: text("sku").notNull(),
+    productName: text("product_name").notNull(),
+    quantity: integer("quantity").notNull(),
+    unitCost: numeric("unit_cost", { precision: 12, scale: 2 }).notNull(),
+    lineTotal: numeric("line_total", { precision: 12, scale: 2 }).notNull(),
+  },
+  (table) => [index("purchase_items_purchase_idx").on(table.purchaseId)],
 );
 
 export const cashShifts = pgTable(
@@ -300,13 +421,60 @@ export const categoriesRelations = relations(categories, ({ many }) => ({
   products: many(products),
 }));
 
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+  purchases: many(purchases),
+}));
+
+export const brandsRelations = relations(brands, ({ many }) => ({
+  products: many(products),
+}));
+
+export const mediaAssetsRelations = relations(mediaAssets, ({ one }) => ({
+  uploader: one(users, {
+    fields: [mediaAssets.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
 export const productsRelations = relations(products, ({ one, many }) => ({
   category: one(categories, {
     fields: [products.categoryId],
     references: [categories.id],
   }),
+  brand: one(brands, {
+    fields: [products.brandId],
+    references: [brands.id],
+  }),
+  primaryMedia: one(mediaAssets, {
+    fields: [products.primaryMediaId],
+    references: [mediaAssets.id],
+  }),
   images: many(productImages),
   saleItems: many(saleItems),
+  purchaseItems: many(purchaseItems),
+}));
+
+export const purchasesRelations = relations(purchases, ({ one, many }) => ({
+  supplier: one(suppliers, {
+    fields: [purchases.supplierId],
+    references: [suppliers.id],
+  }),
+  receiver: one(users, {
+    fields: [purchases.receivedBy],
+    references: [users.id],
+  }),
+  items: many(purchaseItems),
+}));
+
+export const purchaseItemsRelations = relations(purchaseItems, ({ one }) => ({
+  purchase: one(purchases, {
+    fields: [purchaseItems.purchaseId],
+    references: [purchases.id],
+  }),
+  product: one(products, {
+    fields: [purchaseItems.productId],
+    references: [products.id],
+  }),
 }));
 
 export const salesRelations = relations(sales, ({ one, many }) => ({

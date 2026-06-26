@@ -1,4 +1,3 @@
-import { Theme } from "@carbon/react";
 import {
   createContext,
   useCallback,
@@ -10,10 +9,8 @@ import {
 } from "react";
 
 export type AppTheme = "light" | "dark";
-export type CarbonTheme = "g10" | "g100";
 
 const STORAGE_KEY = "refaccionaria-theme";
-const CARBON_THEMES: CarbonTheme[] = ["g10", "g100"];
 
 /** Colores de barra del navegador / PWA alineados con tokens Fortino */
 const META_THEME: Record<AppTheme, string> = {
@@ -23,7 +20,6 @@ const META_THEME: Record<AppTheme, string> = {
 
 type ThemeContextValue = {
   theme: AppTheme;
-  carbonTheme: CarbonTheme;
   isDark: boolean;
   toggle: () => void;
   setTheme: (theme: AppTheme) => void;
@@ -41,24 +37,10 @@ function getInitialTheme(): AppTheme {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-function toCarbonTheme(appTheme: AppTheme): CarbonTheme {
-  return appTheme === "dark" ? "g100" : "g10";
-}
-
-/** Aplica tokens Carbon en html/body para que modales (portal) hereden el tema */
-export function applyCarbonTheme(appTheme: AppTheme) {
-  const carbon = toCarbonTheme(appTheme);
+/** Aplica tema claro/oscuro en html para HeroUI y Tailwind */
+export function applyTheme(appTheme: AppTheme) {
   const root = document.documentElement;
-  const { body } = document;
-
-  for (const t of CARBON_THEMES) {
-    root.classList.remove(`cds--${t}`);
-    body.classList.remove(`cds--${t}`);
-  }
-
-  root.classList.add(`cds--${carbon}`);
-  body.classList.add(`cds--${carbon}`);
-
+  root.classList.toggle("dark", appTheme === "dark");
   root.setAttribute("data-theme", appTheme);
   root.style.colorScheme = appTheme;
 
@@ -71,13 +53,15 @@ export function applyCarbonTheme(appTheme: AppTheme) {
   meta.setAttribute("content", META_THEME[appTheme]);
 }
 
+/** @deprecated Use applyTheme */
+export const applyCarbonTheme = applyTheme;
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<AppTheme>(getInitialTheme);
-  const carbonTheme = toCarbonTheme(theme);
   const isDark = theme === "dark";
 
   useEffect(() => {
-    applyCarbonTheme(theme);
+    applyTheme(theme);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {
@@ -92,15 +76,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ theme, carbonTheme, isDark, toggle, setTheme }),
-    [theme, carbonTheme, isDark, toggle, setTheme],
+    () => ({ theme, isDark, toggle, setTheme }),
+    [theme, isDark, toggle, setTheme],
   );
 
   return (
     <ThemeContext.Provider value={value}>
-      <Theme theme={carbonTheme} className="fortino-app-root">
-        {children}
-      </Theme>
+      <div className="fortino-app-root min-h-dvh">{children}</div>
     </ThemeContext.Provider>
   );
 }

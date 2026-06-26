@@ -5,6 +5,7 @@ export type DashboardMeta = {
   canViewProducts: boolean;
   canViewSales: boolean;
   canManageUsers: boolean;
+  canViewPurchases: boolean;
 };
 
 export type DashboardSummary = {
@@ -24,7 +25,19 @@ export type DashboardSummary = {
   cash?: {
     openShifts: number;
   };
+  inventoryValue?: {
+    atCost: number;
+    atSale: number;
+  };
   salesToday?: {
+    count: number;
+    total: number;
+  };
+  salesYesterday?: {
+    count: number;
+    total: number;
+  };
+  salesWeek?: {
     count: number;
     total: number;
   };
@@ -33,6 +46,20 @@ export type DashboardSummary = {
     count: number;
     total: number;
   }>;
+  paymentBreakdown7Days?: Array<{
+    method: string;
+    count: number;
+    total: number;
+  }>;
+  topProducts7Days?: Array<{
+    productName: string;
+    quantity: number;
+    revenue: number;
+  }>;
+  purchasesMonth?: {
+    count: number;
+    total: number;
+  };
   lowStockItems?: Array<{
     id: string;
     sku: string;

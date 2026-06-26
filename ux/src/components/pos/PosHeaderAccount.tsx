@@ -1,5 +1,5 @@
-import { Button } from "@carbon/react";
-import { Logout } from "@carbon/icons-react";
+import { Button } from "@heroui/react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.js";
 import { useMobileLayout } from "../../hooks/useMediaQuery.js";
 import { getUserInitials } from "../../lib/userDisplay.js";
@@ -11,26 +11,26 @@ export function PosHeaderAccount() {
   const initials = getUserInitials(user?.fullName ?? "?");
 
   return (
-    <div className="fortino-pos-account-bar">
-      <div className="fortino-pos-account-user" title={user?.fullName}>
-        <span className="fortino-user-avatar fortino-user-avatar--sm" aria-hidden>
+    <div className="fortino-pos-account-bar flex items-center gap-2">
+      <div className="fortino-pos-account-user flex items-center gap-2" title={user?.fullName}>
+        <span className="fortino-user-avatar fortino-user-avatar--sm size-7 text-[0.65rem]" aria-hidden>
           {initials}
         </span>
         {!isMobile && (
-          <span className="fortino-pos-account-name">{user?.fullName}</span>
+          <span className="fortino-pos-account-name max-w-[8rem] truncate text-sm">{user?.fullName}</span>
         )}
       </div>
       <ThemeSegment compact />
       <Button
-        kind="ghost"
+        variant="ghost"
         size="sm"
-        hasIconOnly={isMobile}
-        renderIcon={Logout}
-        iconDescription="Cerrar sesión"
+        isIconOnly={isMobile}
+        aria-label="Cerrar sesión"
         className="fortino-pos-logout"
-        onClick={() => logout()}
+        onPress={() => logout()}
       >
-        {isMobile ? undefined : "Salir"}
+        <LogOut size={16} />
+        {!isMobile && <span>Salir</span>}
       </Button>
     </div>
   );

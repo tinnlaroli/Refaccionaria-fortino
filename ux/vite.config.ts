@@ -1,12 +1,17 @@
 ﻿import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
+      devOptions: {
+        enabled: false,
+      },
       includeAssets: ["favicon.svg"],
       manifest: {
         name: "Refaccionaria Fortino POS",
@@ -64,11 +69,14 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     watch: process.env.CHOKIDAR_USEPOLLING
-      ? { usePolling: true, interval: 1000 }
+      ? { usePolling: true, interval: 300 }
       : undefined,
     hmr: process.env.VITE_HMR_CLIENT_PORT
-      ? { clientPort: Number(process.env.VITE_HMR_CLIENT_PORT) }
-      : undefined,
+      ? {
+          clientPort: Number(process.env.VITE_HMR_CLIENT_PORT),
+          protocol: "ws",
+        }
+      : true,
     proxy: {
       "/api": {
         target: process.env.VITE_API_URL ?? "http://localhost:3000",

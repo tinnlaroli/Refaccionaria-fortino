@@ -1,8 +1,7 @@
-import { Light, Asleep } from "@carbon/icons-react";
+import { Moon, Sun } from "lucide-react";
 import { useThemeContext, type AppTheme } from "../context/ThemeContext.js";
 
 type Props = {
-  /** Solo iconos (sidebar contraído o header compacto) */
   compact?: boolean;
 };
 
@@ -23,7 +22,7 @@ export function ThemeSegment({ compact }: Props) {
           title="Modo claro"
           onClick={() => select("light")}
         >
-          <Light size={compact ? 18 : 16} aria-hidden />
+          <Sun size={compact ? 18 : 16} aria-hidden />
           {!compact && <span>Claro</span>}
         </button>
         <button
@@ -34,7 +33,7 @@ export function ThemeSegment({ compact }: Props) {
           title="Modo oscuro"
           onClick={() => select("dark")}
         >
-          <Asleep size={compact ? 18 : 16} aria-hidden />
+          <Moon size={compact ? 18 : 16} aria-hidden />
           {!compact && <span>Oscuro</span>}
         </button>
       </div>

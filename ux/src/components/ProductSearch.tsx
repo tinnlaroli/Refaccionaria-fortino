@@ -6,8 +6,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button, Search, Tag } from "@carbon/react";
-import { Barcode, Search as SearchIcon } from "@carbon/icons-react";
+import { Button, Chip, SearchField } from "@heroui/react";
+import { Barcode, Search as SearchIcon } from "lucide-react";
 import { searchProductsLocal, findBySku } from "../api/products.js";
 import { StockBadge } from "./StockBadge.js";
 import { useToast } from "../context/ToastContext.js";
@@ -127,23 +127,28 @@ export const ProductSearch = forwardRef<ProductSearchHandle, Props>(function Pro
   return (
     <div className="fortino-pos-search">
       <form className="fortino-pos-search-form" onSubmit={handleSubmit}>
-        <Search
-          ref={inputRef}
-          id="pos-product-search"
-          labelText="Buscar producto"
-          placeholder="Escanear SKU o buscar pieza… (F2)"
+        <SearchField
+          aria-label="Buscar producto"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
-          size="lg"
-          autoComplete="off"
-        />
-        <Button type="submit" kind="primary" size="lg">
+          onChange={setQuery}
+          className="fortino-toolbar-grow"
+        >
+          <SearchField.Group>
+            <SearchField.Input
+              ref={inputRef}
+              id="pos-product-search"
+              placeholder="Escanear SKU o buscar pieza… (F2)"
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+            />
+          </SearchField.Group>
+        </SearchField>
+        <Button type="submit" variant="primary" size="lg">
           Agregar
         </Button>
       </form>
 
-      <p className="fortino-pos-search-hint cds--label">
+      <p className="fortino-pos-search-hint fortino-caption">
         <Barcode size={14} aria-hidden />
         Escanea y presiona Enter · ↑↓ para navegar resultados
       </p>
@@ -163,9 +168,9 @@ export const ProductSearch = forwardRef<ProductSearchHandle, Props>(function Pro
                   onMouseEnter={() => setHighlightIndex(index)}
                 >
                   <span className="fortino-search-result-main">
-                    <Tag type="gray" size="sm" className="sku">
-                      {p.sku}
-                    </Tag>
+                    <Chip size="sm" variant="flat">
+                      <Chip.Label className="sku">{p.sku}</Chip.Label>
+                    </Chip>
                     <span className="fortino-search-result-name">{p.name}</span>
                   </span>
                   <span className="fortino-search-result-meta">

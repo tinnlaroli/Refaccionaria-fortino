@@ -1,9 +1,7 @@
 import bcrypt from "bcryptjs";
 import { createDb } from "./client.js";
 import {
-  categories,
   permissions,
-  products,
   rolePermissions,
   roles,
   users,
@@ -18,6 +16,14 @@ const PERMISSION_KEYS = [
   "products.create",
   "products.edit",
   "products.view_costs",
+  "suppliers.view",
+  "suppliers.manage",
+  "brands.view",
+  "brands.manage",
+  "purchases.view",
+  "purchases.create",
+  "media.view",
+  "media.upload",
   "sales.create",
   "sales.cancel",
   "sales.view_all",
@@ -29,15 +35,24 @@ const PERMISSION_KEYS = [
   "roles.manage",
 ] as const;
 
+const CASHIER_PERMISSIONS = [
+  "products.view",
+  "sales.create",
+  "cash.open_shift",
+  "cash.close_shift",
+  "cash.register_movement",
+] satisfies (typeof PERMISSION_KEYS)[number][];
+
 async function seed() {
   const { db, client } = createDb(connectionString);
 
   console.log("[seed] Starting...");
 
+  // Roles base del sistema
   for (const role of [
-    { name: "admin", description: "Acceso total" },
-    { name: "cashier", description: "Mostrador y caja" },
-    { name: "viewer", description: "Solo lectura" },
+    { name: "admin", description: "Acceso total al sistema" },
+    { name: "cashier", description: "Mostrador, caja y ventas" },
+    { name: "viewer", description: "Solo consulta, sin editar" },
   ]) {
     await db.insert(roles).values(role).onConflictDoNothing({ target: roles.name });
   }
@@ -46,6 +61,7 @@ async function seed() {
   const admin = allRoles.find((r) => r.name === "admin")!;
   const cashier = allRoles.find((r) => r.name === "cashier")!;
 
+  // Permisos individuales
   for (const key of PERMISSION_KEYS) {
     await db
       .insert(permissions)
@@ -55,6 +71,7 @@ async function seed() {
 
   const allPerms = await db.select().from(permissions);
 
+  // Admin obtiene todos los permisos
   for (const perm of allPerms) {
     await db
       .insert(rolePermissions)
@@ -62,15 +79,9 @@ async function seed() {
       .onConflictDoNothing();
   }
 
-  const cashierPermKeys = [
-    "products.view",
-    "sales.create",
-    "cash.open_shift",
-    "cash.close_shift",
-    "cash.register_movement",
-  ];
+  // Cajero obtiene permisos de mostrador
   for (const perm of allPerms.filter((p) =>
-    cashierPermKeys.includes(p.key as (typeof PERMISSION_KEYS)[number]),
+    CASHIER_PERMISSIONS.includes(p.key as (typeof PERMISSION_KEYS)[number]),
   )) {
     await db
       .insert(rolePermissions)
@@ -78,6 +89,7 @@ async function seed() {
       .onConflictDoNothing();
   }
 
+  // Único usuario precargado: administrador
   const passwordHash = await bcrypt.hash("admin123", 10);
   await db
     .insert(users)
@@ -90,66 +102,13 @@ async function seed() {
     })
     .onConflictDoNothing({ target: users.email });
 
-  const cashierHash = await bcrypt.hash("cajero123", 10);
-  await db
-    .insert(users)
-    .values({
-      email: "cajero@fortino.local",
-      passwordHash: cashierHash,
-      fullName: "Cajero Demo",
-      roleId: cashier.id,
-      isActive: true,
-    })
-    .onConflictDoNothing({ target: users.email });
-
-  for (const cat of [
-    { name: "Aceites", slug: "aceites" },
-    { name: "Filtros", slug: "filtros" },
-    { name: "Frenos", slug: "frenos" },
-  ]) {
-    await db.insert(categories).values(cat).onConflictDoNothing({ target: categories.slug });
-  }
-
-  const cats = await db.select().from(categories);
-  const aceites = cats.find((c) => c.slug === "aceites")!;
-  const filtros = cats.find((c) => c.slug === "filtros")!;
-
-  await db
-    .insert(products)
-    .values([
-      {
-        sku: "ACE-5W30-1L",
-        name: "Aceite 5W30 1L",
-        categoryId: aceites.id,
-        purchasePrice: "85.00",
-        salePrice: "120.00",
-        stock: 50,
-        minStock: 10,
-      },
-      {
-        sku: "FLT-001",
-        name: "Filtro de aceite universal",
-        categoryId: filtros.id,
-        purchasePrice: "45.00",
-        salePrice: "75.00",
-        stock: 30,
-        minStock: 5,
-      },
-      {
-        sku: "FRE-PAST-01",
-        name: "Pastillas de freno delanteras",
-        categoryId: cats.find((c) => c.slug === "frenos")!.id,
-        purchasePrice: "180.00",
-        salePrice: "280.00",
-        stock: 15,
-        minStock: 3,
-      },
-    ])
-    .onConflictDoNothing({ target: products.sku });
-
   console.log("[seed] Done.");
   console.log("[seed] Admin: admin@fortino.local / admin123");
-  console.log("[seed] Cajero: cajero@fortino.local / cajero123");
+  console.log("[seed]");
+  console.log("[seed] El sistema está listo para configurar:");
+  console.log("[seed]   - Agrega categorías, marcas y proveedores");
+  console.log("[seed]   - Crea productos con sus precios y stock");
+  console.log("[seed]   - Registra empleados (cajeros) con sus roles");
 
   await client.end();
 }

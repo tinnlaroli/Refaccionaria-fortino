@@ -36,12 +36,41 @@ export async function openShift(token: string, openingCash: number) {
   return shift;
 }
 
+export type ShiftSummary = {
+  shift: CashShift;
+  salesTotal: number;
+  salesCount: number;
+  cashSalesTotal: number;
+  cardSalesTotal: number;
+  transferSalesTotal: number;
+  movementNet: number;
+  incomeTotal: number;
+  expenseTotal: number;
+  expectedCash: number;
+  movements: Array<{
+    id: string;
+    type: "income" | "expense";
+    amount: string;
+    note: string | null;
+    createdAt: string;
+    createdByName: string | null;
+  }>;
+};
+
+export type CloseShiftResult = CashShift &
+  Omit<ShiftSummary, "shift"> & {
+    difference: number;
+    closingCashDeclared?: string | null;
+    closingCashExpected?: string | null;
+    closedAt?: string | null;
+  };
+
 export async function closeShift(
   token: string,
   shiftId: string,
   closingCashDeclared: number,
 ) {
-  const result = await apiFetch<CashShift & { difference: number }>(
+  const result = await apiFetch<CloseShiftResult>(
     `/api/cash/shifts/${shiftId}/close`,
     {
       method: "POST",
@@ -68,27 +97,6 @@ export async function registerMovement(
     body: JSON.stringify(params),
   });
 }
-
-export type ShiftSummary = {
-  shift: CashShift;
-  salesTotal: number;
-  salesCount: number;
-  cashSalesTotal: number;
-  cardSalesTotal: number;
-  transferSalesTotal: number;
-  movementNet: number;
-  incomeTotal: number;
-  expenseTotal: number;
-  expectedCash: number;
-  movements: Array<{
-    id: string;
-    type: "income" | "expense";
-    amount: string;
-    note: string | null;
-    createdAt: string;
-    createdByName: string | null;
-  }>;
-};
 
 export async function getShiftSummary(token: string, shiftId: string) {
   return apiFetch<ShiftSummary>(`/api/cash/shifts/${shiftId}/summary`, { token });

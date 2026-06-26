@@ -1,25 +1,25 @@
-import { Link } from "react-router-dom";
-import { Tag } from "@carbon/react";
-import { useShiftStatus } from "../../hooks/useShiftStatus.js";
-
-export function PosShiftStatus() {
-  const { hasShift, loading } = useShiftStatus();
-
-  if (loading || hasShift === null) return null;
-
-  if (hasShift) {
-    return (
-      <Tag type="green" size="sm" title="Turno de caja activo">
-        Caja abierta
-      </Tag>
-    );
-  }
-
-  return (
-    <Link to="/caja" className="fortino-pos-shift-link" title="Abrir turno en Caja">
-      <Tag type="gray" size="sm">
-        Sin turno · Abrir caja
-      </Tag>
-    </Link>
-  );
-}
+import { Link } from "react-router-dom";
+import { Chip } from "@heroui/react";
+import { useShiftStatus } from "../../hooks/useShiftStatus.js";
+
+export function PosShiftStatus() {
+  const { hasShift, loading } = useShiftStatus();
+
+  if (loading || hasShift === null) return null;
+
+  if (hasShift) {
+    return (
+      <Chip color="success" size="sm" title="Turno de caja activo">
+        <Chip.Label>Caja abierta</Chip.Label>
+      </Chip>
+    );
+  }
+
+  return (
+    <Link to="/caja" className="fortino-pos-shift-link no-underline" title="Abrir turno en Caja">
+      <Chip size="sm">
+        <Chip.Label>Sin turno · Abrir caja</Chip.Label>
+      </Chip>
+    </Link>
+  );
+}

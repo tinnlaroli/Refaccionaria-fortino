@@ -14,11 +14,15 @@ import usersRoutes from "./routes/users.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import rolesRoutes from "./routes/roles.js";
 import auditRoutes from "./routes/audit.js";
+import suppliersRoutes from "./routes/suppliers.js";
+import brandsRoutes from "./routes/brands.js";
+import purchasesRoutes from "./routes/purchases.js";
+import mediaRoutes from "./routes/media.js";
 
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "3mb" }));
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "refaccionaria-api", version: "0.1.0" });
@@ -57,6 +61,10 @@ app.get("/api/info", (_req, res) => {
       dashboard: "/api/dashboard",
       roles: "/api/roles",
       audit: "/api/audit",
+      suppliers: "/api/suppliers",
+      brands: "/api/brands",
+      purchases: "/api/purchases",
+      media: "/api/media",
     },
   });
 });
@@ -72,6 +80,10 @@ app.use("/api/sync", syncRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/suppliers", suppliersRoutes);
+app.use("/api/brands", brandsRoutes);
+app.use("/api/purchases", purchasesRoutes);
+app.use("/api/media", mediaRoutes);
 
 app.listen(config.port, "0.0.0.0", () => {
   console.log(`[api] listening on http://0.0.0.0:${config.port}`);

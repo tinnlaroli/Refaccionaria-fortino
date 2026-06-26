@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react";
-import {
-  Button,
-  Checkbox,
-  ComposedModal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  ProgressIndicator,
-  ProgressStep,
-  Stack,
-} from "@carbon/react";
+import { Button, Checkbox } from "@heroui/react";
 import type { ModuleWalkthrough } from "../../config/walkthroughs.js";
+import {
+  isWalkthroughDismissed,
+  setWalkthroughDismissed,
+  suppressAutoShowHelp,
+} from "../../lib/helpStorage.js";
+import { AppModal } from "../ui/AppModal.js";
 
 type Props = {
   open: boolean;
@@ -18,26 +14,12 @@ type Props = {
   onClose: () => void;
 };
 
-function storageKey(id: string) {
-  return `fortino-help-dismissed-${id}`;
-}
-
-export function isWalkthroughDismissed(id: string) {
-  try {
-    return localStorage.getItem(storageKey(id)) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function setWalkthroughDismissed(id: string, dismissed: boolean) {
-  try {
-    if (dismissed) localStorage.setItem(storageKey(id), "1");
-    else localStorage.removeItem(storageKey(id));
-  } catch {
-    /* ignore */
-  }
-}
+export {
+  isWalkthroughDismissed,
+  setWalkthroughDismissed,
+  shouldAutoShowHelp,
+  suppressAutoShowHelp,
+} from "../../lib/helpStorage.js";
 
 export function ModuleWalkthroughModal({ open, walkthrough, onClose }: Props) {
   const [step, setStep] = useState(0);
@@ -46,7 +28,7 @@ export function ModuleWalkthroughModal({ open, walkthrough, onClose }: Props) {
   useEffect(() => {
     if (open) {
       setStep(0);
-      setDontShowAgain(false);
+      setDontShowAgain(isWalkthroughDismissed(walkthrough.id));
     }
   }, [open, walkthrough.id]);
 
@@ -55,62 +37,78 @@ export function ModuleWalkthroughModal({ open, walkthrough, onClose }: Props) {
   const isLast = step >= total - 1;
 
   const finish = () => {
+    suppressAutoShowHelp(walkthrough.id);
     if (dontShowAgain) setWalkthroughDismissed(walkthrough.id, true);
+    else setWalkthroughDismissed(walkthrough.id, false);
     onClose();
   };
 
   return (
-    <ComposedModal open={open} onClose={finish} size="md">
-      <ModalHeader title={`Guía: ${walkthrough.title}`} label={walkthrough.summary} closeModal={finish} />
-      <ModalBody>
-        <Stack gap={6}>
-          <ProgressIndicator currentIndex={step} spaceEqually={total <= 4}>
-            {walkthrough.steps.map((s, i) => (
-              <ProgressStep
-                key={s.title}
-                label={s.title}
-                description={`Paso ${i + 1}`}
-                complete={i < step}
-                current={i === step}
-              />
-            ))}
-          </ProgressIndicator>
-
-          <div>
-            <p className="fortino-walkthrough-step-label">
-              Paso {step + 1} de {total}
-            </p>
-            <h3 className="fortino-walkthrough-step-title">{current?.title}</h3>
-            <p className="fortino-walkthrough-step-body">{current?.body}</p>
+    <AppModal
+      open={open}
+      kicker="Guía del módulo"
+      title={walkthrough.title}
+      subtitle={walkthrough.summary}
+      size="help"
+      onClose={finish}
+      footerClassName="fortino-modal-footer fortino-modal-footer--split"
+      footer={
+        <>
+          <div className="fortino-modal-footer-start">
+            {step > 0 && (
+              <Button variant="tertiary" onPress={() => setStep((s) => s - 1)}>
+                Anterior
+              </Button>
+            )}
           </div>
+          <div className="fortino-modal-footer-end">
+            <Button variant="secondary" onPress={finish}>
+              Cerrar
+            </Button>
+            {!isLast ? (
+              <Button variant="primary" onPress={() => setStep((s) => s + 1)}>
+                Siguiente
+              </Button>
+            ) : (
+              <Button variant="primary" onPress={finish}>
+                Entendido
+              </Button>
+            )}
+          </div>
+        </>
+      }
+    >
+      <div className="fortino-help-modal-body">
+        <div className="fortino-help-progress" role="tablist" aria-label="Pasos de la guía">
+          {walkthrough.steps.map((s, i) => (
+            <button
+              key={s.title}
+              type="button"
+              role="tab"
+              aria-selected={i === step}
+              className={`fortino-help-progress-segment${i <= step ? " fortino-help-progress-segment--done" : ""}${i === step ? " fortino-help-progress-segment--active" : ""}`}
+              aria-label={`Paso ${i + 1}: ${s.title}`}
+              onClick={() => setStep(i)}
+            />
+          ))}
+        </div>
 
-          <Checkbox
-            id={`walkthrough-dismiss-${walkthrough.id}`}
-            labelText="No volver a mostrar esta guía"
-            checked={dontShowAgain}
-            onChange={(_, { checked }) => setDontShowAgain(checked)}
-          />
-        </Stack>
-      </ModalBody>
-      <ModalFooter>
-        <Button kind="secondary" onClick={finish}>
-          Cerrar
-        </Button>
-        {step > 0 && (
-          <Button kind="tertiary" onClick={() => setStep((s) => s - 1)}>
-            Anterior
-          </Button>
-        )}
-        {!isLast ? (
-          <Button kind="primary" onClick={() => setStep((s) => s + 1)}>
-            Siguiente
-          </Button>
-        ) : (
-          <Button kind="primary" onClick={finish}>
-            Entendido
-          </Button>
-        )}
-      </ModalFooter>
-    </ComposedModal>
+        <article className="fortino-help-step-card">
+          <p className="fortino-help-step-label">
+            Paso {step + 1} de {total}
+          </p>
+          <h3 className="fortino-help-step-title">{current?.title}</h3>
+          <p className="fortino-help-step-body">{current?.body}</p>
+        </article>
+
+        <Checkbox
+          id={`walkthrough-dismiss-${walkthrough.id}`}
+          isSelected={dontShowAgain}
+          onChange={setDontShowAgain}
+        >
+          No volver a mostrar esta guía automáticamente
+        </Checkbox>
+      </div>
+    </AppModal>
   );
 }

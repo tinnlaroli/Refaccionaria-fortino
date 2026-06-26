@@ -1,5 +1,5 @@
-import { products } from "@refaccionaria/db";
-import { desc, eq, ilike, or, and, sql } from "drizzle-orm";
+import { brands, mediaAssets, products } from "@refaccionaria/db";
+import { desc, eq, ilike, or, and, sql, getTableColumns } from "drizzle-orm";
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db.js";
@@ -15,6 +15,23 @@ import {
 import { requireAuth, requirePermission } from "../middleware/auth.js";
 
 const router = Router();
+const productColumns = getTableColumns(products);
+
+async function queryProducts(whereClause, orderBy, limit) {
+  let query = db
+    .select({
+      ...productColumns,
+      imageUrl: mediaAssets.url,
+      brandName: brands.name,
+    })
+    .from(products)
+    .leftJoin(mediaAssets, eq(products.primaryMediaId, mediaAssets.id))
+    .leftJoin(brands, eq(products.brandId, brands.id));
+  if (whereClause) {
+    query = query.where(whereClause);
+  }
+  return query.orderBy(orderBy).limit(limit);
+}
 
 const productSchema = z.object({
   sku: skuZod(),
@@ -25,6 +42,11 @@ const productSchema = z.object({
   salePrice: moneyZod("Precio de venta"),
   stock: nonNegativeIntZod("Stock").optional(),
   minStock: nonNegativeIntZod("Stock mínimo").optional(),
+  unitOfMeasure: z.string().trim().min(1).max(12).optional(),
+  brandId: z.string().uuid().optional().nullable(),
+  presentation: z.string().trim().max(120).optional().nullable(),
+  vehicleCompatibility: z.string().trim().max(500).optional().nullable(),
+  primaryMediaId: z.string().uuid().optional().nullable(),
   isActive: z.boolean().optional(),
 });
 
@@ -32,30 +54,18 @@ router.get("/", requireAuth, requirePermission("products.view"), async (req, res
   const q = typeof req.query.q === "string" ? req.query.q : "";
   const lowStock = req.query.lowStock === "1" || req.query.lowStock === "true";
   const list = lowStock
-    ? await db
-        .select()
-        .from(products)
-        .where(
-          and(
-            eq(products.isActive, true),
-            sql`${products.stock} <= ${products.minStock}`,
-          ),
-        )
-        .orderBy(products.stock)
-        .limit(100)
+    ? await queryProducts(
+        and(eq(products.isActive, true), sql`${products.stock} <= ${products.minStock}`),
+        products.stock,
+        100,
+      )
     : q
-    ? await db
-        .select()
-        .from(products)
-        .where(
-          or(
-            ilike(products.sku, `%${q}%`),
-            ilike(products.name, `%${q}%`),
-          ),
+      ? await queryProducts(
+          or(ilike(products.sku, `%${q}%`), ilike(products.name, `%${q}%`)),
+          desc(products.updatedAt),
+          50,
         )
-        .orderBy(desc(products.updatedAt))
-        .limit(50)
-    : await db.select().from(products).orderBy(desc(products.updatedAt)).limit(100);
+      : await queryProducts(undefined, desc(products.updatedAt), 100);
 
   const mapped = list.map((p) => ({
     ...p,
@@ -66,6 +76,23 @@ router.get("/", requireAuth, requirePermission("products.view"), async (req, res
 
   res.json(mapped);
 });
+
+async function productWithMedia(product, includeCosts) {
+  let imageUrl = null;
+  if (product.primaryMediaId) {
+    const [media] = await db
+      .select({ url: mediaAssets.url })
+      .from(mediaAssets)
+      .where(eq(mediaAssets.id, product.primaryMediaId))
+      .limit(1);
+    imageUrl = media?.url ?? null;
+  }
+  return {
+    ...product,
+    imageUrl,
+    purchasePrice: includeCosts ? product.purchasePrice : undefined,
+  };
+}
 
 router.get("/sku/:sku", requireAuth, requirePermission("products.view"), async (req, res) => {
   const [product] = await db
@@ -79,12 +106,7 @@ router.get("/sku/:sku", requireAuth, requirePermission("products.view"), async (
     return;
   }
 
-  res.json({
-    ...product,
-    purchasePrice: req.user?.permissions.includes("products.view_costs")
-      ? product.purchasePrice
-      : undefined,
-  });
+  res.json(await productWithMedia(product, req.user?.permissions.includes("products.view_costs")));
 });
 
 router.post(
@@ -106,6 +128,11 @@ router.post(
         salePrice: String(parsed.data.salePrice),
         stock: parsed.data.stock ?? 0,
         minStock: parsed.data.minStock ?? 0,
+        unitOfMeasure: parsed.data.unitOfMeasure ?? "PZA",
+        brandId: parsed.data.brandId ?? null,
+        presentation: parsed.data.presentation ?? null,
+        vehicleCompatibility: parsed.data.vehicleCompatibility ?? null,
+        primaryMediaId: parsed.data.primaryMediaId ?? null,
       })
       .returning();
 
@@ -140,6 +167,15 @@ router.patch(
     if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId;
     if (parsed.data.stock !== undefined) data.stock = parsed.data.stock;
     if (parsed.data.minStock !== undefined) data.minStock = parsed.data.minStock;
+    if (parsed.data.unitOfMeasure !== undefined) data.unitOfMeasure = parsed.data.unitOfMeasure;
+    if (parsed.data.brandId !== undefined) data.brandId = parsed.data.brandId;
+    if (parsed.data.presentation !== undefined) data.presentation = parsed.data.presentation;
+    if (parsed.data.vehicleCompatibility !== undefined) {
+      data.vehicleCompatibility = parsed.data.vehicleCompatibility;
+    }
+    if (parsed.data.primaryMediaId !== undefined) {
+      data.primaryMediaId = parsed.data.primaryMediaId;
+    }
     if (parsed.data.purchasePrice !== undefined) {
       data.purchasePrice = String(parsed.data.purchasePrice);
     }

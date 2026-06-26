@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Button,
-  ContentSwitcher,
-  InlineNotification,
-  NumberInput,
-  Stack,
-  Switch,
-} from "@carbon/react";
+  Tabs,
+} from "@heroui/react";
 import { useAuth } from "../context/AuthContext.js";
 import { useCart } from "../context/CartContext.js";
 import { useShiftStatus } from "../hooks/useShiftStatus.js";
@@ -15,7 +12,9 @@ import { getCachedShift } from "../api/cash.js";
 import { createSaleOnline, queueSaleOffline } from "../api/sales.js";
 import { getErrorMessage } from "../lib/errors.js";
 import { cashReceived } from "../lib/validation.js";
-import { AppModal } from "./carbon/AppModal.js";
+import { AppModal } from "./ui/AppModal.js";
+import { EX } from "../config/fieldExamples.js";
+import { FortinoNumberField } from "./ui/FortinoNumberField.js";
 import { ReceiptModal, type ReceiptData } from "./ReceiptModal.js";
 
 type PaymentMethod = "cash" | "card" | "transfer";
@@ -26,10 +25,10 @@ type Props = {
   onSuccess: () => void;
 };
 
-const PAYMENTS: Array<{ index: number; value: PaymentMethod; label: string }> = [
-  { index: 0, value: "cash", label: "Efectivo" },
-  { index: 1, value: "card", label: "Tarjeta" },
-  { index: 2, value: "transfer", label: "Transferencia" },
+const PAYMENTS: Array<{ value: PaymentMethod; label: string }> = [
+  { value: "cash", label: "Efectivo" },
+  { value: "card", label: "Tarjeta" },
+  { value: "transfer", label: "Transferencia" },
 ];
 
 function suggestCashAmounts(total: number): number[] {
@@ -51,31 +50,29 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
   const { hasShift, loading: shiftLoading } = useShiftStatus();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentIndex, setPaymentIndex] = useState(0);
-  const [amountReceived, setAmountReceived] = useState<string | number>("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+  const [amountReceived, setAmountReceived] = useState<number | undefined>();
   const [amountError, setAmountError] = useState<string | undefined>();
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
-  const paymentMethod = PAYMENTS[paymentIndex]?.value ?? "cash";
   const cashSuggestions = useMemo(() => suggestCashAmounts(total), [total]);
 
   const change = useMemo(() => {
     if (paymentMethod !== "cash") return null;
-    const received = Number(amountReceived);
-    if (!received || Number.isNaN(received)) return null;
-    return Math.max(0, received - total);
+    if (amountReceived == null || Number.isNaN(amountReceived)) return null;
+    return Math.max(0, amountReceived - total);
   }, [paymentMethod, amountReceived, total]);
 
   const canConfirm =
     lines.length > 0 &&
     hasShift === true &&
     (paymentMethod !== "cash" ||
-      (Number(amountReceived) >= total && !Number.isNaN(Number(amountReceived))));
+      (amountReceived != null && amountReceived >= total && !Number.isNaN(amountReceived)));
 
   useEffect(() => {
     if (!open) return;
-    setPaymentIndex(0);
-    setAmountReceived("");
+    setPaymentMethod("cash");
+    setAmountReceived(undefined);
     setAmountError(undefined);
     setError(null);
   }, [open]);
@@ -96,7 +93,7 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
     }
 
     if (paymentMethod === "cash") {
-      const err = cashReceived(String(amountReceived), total);
+      const err = cashReceived(String(amountReceived ?? ""), total);
       if (err) {
         setAmountError(err);
         return;
@@ -120,7 +117,7 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
     const clientUuid = crypto.randomUUID();
     const soldAt = new Date().toISOString();
     const snapshotItems = [...lines];
-    const received = paymentMethod === "cash" ? Number(amountReceived) : undefined;
+    const received = paymentMethod === "cash" ? amountReceived : undefined;
 
     try {
       let saleId: string | undefined;
@@ -149,8 +146,8 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
       clear();
       onSuccess();
       onClose();
-      setAmountReceived("");
-      setPaymentIndex(0);
+      setAmountReceived(undefined);
+      setPaymentMethod("cash");
       setReceipt({
         id: saleId,
         clientUuid,
@@ -176,39 +173,46 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
     <AppModal
       open={open}
       title="Confirmar cobro"
-      subtitle={`${lines.length} artículo(s)${!online ? " · se guardará offline" : ""}`}
+      subtitle={`${lines.length} artículo(s) en el ticket${!online ? " · se guardará sin conexión" : ""}`}
+      size="md"
       onClose={onClose}
       onSubmit={handleConfirm}
       submitLabel="Cobrar"
       submitDisabled={!canConfirm}
       loading={loading}
     >
-      <Stack gap={5}>
+      <div className="flex flex-col gap-5">
         <div className="fortino-checkout-amount">
-          <span className="cds--label">Total</span>
+          <span className="fortino-caption">Total</span>
           <p className="fortino-checkout-total price">${total.toFixed(2)} MXN</p>
         </div>
 
-        <ContentSwitcher
-          selectedIndex={paymentIndex}
-          onChange={({ index }) => setPaymentIndex(Number(index ?? 0))}
+        <Tabs
+          selectedKey={paymentMethod}
+          onSelectionChange={(key) => setPaymentMethod(key as PaymentMethod)}
         >
-          {PAYMENTS.map((p) => (
-            <Switch key={p.value} name={p.value} text={p.label} />
-          ))}
-        </ContentSwitcher>
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Forma de pago">
+              {PAYMENTS.map((p) => (
+                <Tabs.Tab key={p.value} id={p.value}>
+                  {p.label}
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
 
         {paymentMethod === "cash" && (
-          <Stack gap={4}>
+          <div className="flex flex-col gap-4">
             <div className="fortino-cash-quick">
-              <span className="cds--label">Monto rápido</span>
+              <span className="fortino-caption">Monto rápido</span>
               <div className="fortino-cash-quick-btns">
                 {cashSuggestions.map((amount) => (
                   <Button
                     key={amount}
-                    kind={Number(amountReceived) === amount ? "primary" : "tertiary"}
+                    variant={amountReceived === amount ? "primary" : "tertiary"}
                     size="sm"
-                    onClick={() => setCashAmount(amount)}
+                    onPress={() => setCashAmount(amount)}
                   >
                     {amount === total ? "Exacto" : `$${amount}`}
                   </Button>
@@ -216,48 +220,57 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
               </div>
             </div>
 
-            <NumberInput
+            <FortinoNumberField
               id="checkout-amount"
-              label="Monto recibido"
-              min={total}
-              step={0.01}
+              label="Efectivo recibido del cliente (MXN)"
+              placeholder={EX.checkoutAmount}
               value={amountReceived}
-              onChange={(_, { value }) => {
+              onChange={(value) => {
                 setAmountReceived(value);
-                if (value) setAmountError(cashReceived(String(value), total));
+                if (value != null) setAmountError(cashReceived(String(value), total));
                 else setAmountError("Indica el monto recibido");
               }}
               onBlur={() => {
-                if (!amountReceived) setAmountError("Indica el monto recibido");
+                if (amountReceived == null) setAmountError("Indica el monto recibido");
                 else setAmountError(cashReceived(String(amountReceived), total));
               }}
-              invalid={Boolean(amountError)}
-              invalidText={amountError}
+              minValue={total}
+              step={0.01}
+              error={amountError}
+              required
             />
 
-            {change != null && Number(amountReceived) >= total && (
+            {change != null && amountReceived != null && amountReceived >= total && (
               <div className="fortino-checkout-change">
                 <span>Cambio</span>
                 <strong className="price">${change.toFixed(2)}</strong>
               </div>
             )}
-          </Stack>
+          </div>
         )}
 
-        {(!shiftLoading && hasShift === false) && (
-          <InlineNotification
-            kind="warning"
-            lowContrast
-            title="Turno de caja requerido"
-            subtitle="Ve a Caja y abre turno antes de registrar la venta."
-            hideCloseButton
-          />
+        {!shiftLoading && hasShift === false && (
+          <Alert status="warning">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>Turno de caja requerido</Alert.Title>
+              <Alert.Description>
+                Ve a Caja y abre turno antes de registrar la venta.
+              </Alert.Description>
+            </Alert.Content>
+          </Alert>
         )}
 
         {error && (
-          <InlineNotification kind="error" lowContrast title="No se pudo cobrar" subtitle={error} hideCloseButton />
+          <Alert status="danger">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>No se pudo cobrar</Alert.Title>
+              <Alert.Description>{error}</Alert.Description>
+            </Alert.Content>
+          </Alert>
         )}
-      </Stack>
+      </div>
     </AppModal>
   );
 }

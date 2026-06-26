@@ -1,0 +1,1167 @@
+@layer components {
+  .fortino-login-page {
+    @apply relative flex min-h-dvh items-center justify-center bg-gradient-to-br from-background via-surface-secondary to-accent-soft/40 p-6;
+  }
+
+  .fortino-login-tile {
+    @apply w-full max-w-[420px] rounded-xl border border-border border-t-4 border-t-accent bg-surface p-6 shadow-md;
+  }
+
+  .fortino-login-subtitle {
+    @apply mt-1 text-sm text-muted;
+  }
+
+  .fortino-login-header {
+    @apply absolute right-4 top-4 flex items-center gap-3;
+  }
+
+  .fortino-heading-display {
+    @apply text-3xl font-bold tracking-tight text-foreground;
+  }
+
+  .fortino-admin-page {
+    @apply flex flex-col gap-4;
+  }
+
+  .fortino-pos-layout {
+    @apply grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,22rem)];
+  }
+
+  .fortino-pos-cart-header {
+    @apply flex items-center justify-between gap-2 border-b border-border pb-3;
+  }
+
+  .fortino-pos-cart-panel {
+    @apply flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-surface;
+  }
+
+  .fortino-pos-cart-body {
+    @apply min-h-0 flex-1 overflow-auto p-3;
+  }
+
+  .fortino-pos-cart-footer {
+    @apply border-t border-border p-3;
+  }
+
+  .fortino-pos-product-row {
+    @apply flex items-center gap-2 rounded-lg border border-border p-2;
+  }
+
+  .fortino-sidebar {
+    @apply flex flex-col;
+  }
+
+  .fortino-sidebar-nav {
+    @apply flex flex-1 flex-col gap-0.5 overflow-y-auto p-2;
+  }
+
+  .fortino-sidebar-link {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-default-hover;
+  }
+
+  .fortino-sidebar-link--active {
+    @apply bg-accent-soft font-semibold text-accent;
+  }
+
+  .fortino-sidebar-link--collapsed {
+    @apply justify-center px-2;
+  }
+
+  .fortino-interactive-row--hover {
+    @apply bg-default-soft;
+  }
+
+  .fortino-row-actions {
+    @apply flex items-center gap-0.5 opacity-0 transition-opacity;
+  }
+
+  .fortino-row-actions--visible {
+    @apply opacity-100;
+  }
+
+  .fortino-help-btn {
+    @apply shrink-0 gap-1.5 font-medium transition-transform active:scale-[0.98];
+  }
+
+  .fortino-field {
+    @apply flex flex-col gap-1;
+  }
+
+  .fortino-field-label {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .fortino-field-helper {
+    @apply m-0 text-sm text-muted;
+  }
+
+  .fortino-field-error {
+    @apply m-0 text-sm text-danger;
+  }
+
+  .fortino-select {
+    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25;
+  }
+
+  .fortino-select--invalid {
+    @apply border-danger focus:border-danger focus:ring-danger/25;
+  }
+
+  .fortino-number-input {
+    @apply w-full min-w-0 rounded-lg border border-border bg-surface px-3 py-2 text-sm tabular-nums text-foreground transition-colors placeholder:text-muted/55 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25;
+  }
+
+  .fortino-number-field [data-slot="number-field-input"]::placeholder {
+    @apply text-muted/55;
+  }
+
+  .fortino-detail-list {
+    @apply m-0 grid gap-2 rounded-xl border border-border bg-surface-secondary/50 p-4;
+  }
+
+  .fortino-detail-list__row {
+    @apply grid grid-cols-1 gap-0.5 sm:grid-cols-[minmax(8rem,11rem)_1fr] sm:items-baseline;
+  }
+
+  .fortino-detail-list__label {
+    @apply m-0 text-sm text-muted;
+  }
+
+  .fortino-detail-list__value {
+    @apply m-0 text-sm font-medium text-foreground;
+  }
+
+  .fortino-number-input--invalid {
+    @apply border-danger focus:border-danger focus:ring-danger/25;
+  }
+
+  .fortino-number-field {
+    @apply w-full min-w-0;
+  }
+
+  .fortino-number-field__group,
+  .fortino-number-field [data-slot="number-field-group"] {
+    @apply w-full min-w-0;
+  }
+
+  .fortino-number-field__input,
+  .fortino-number-field [data-slot="number-field-input"] {
+    @apply min-w-[5ch] flex-1 w-full tabular-nums;
+  }
+
+  .fortino-theme-segment {
+    @apply flex flex-col gap-2 px-3 py-2;
+  }
+
+  .fortino-theme-segment__label {
+    @apply text-xs font-medium uppercase tracking-wide text-muted;
+  }
+
+  .fortino-theme-segment__buttons {
+    @apply flex gap-1 rounded-lg border border-border p-1;
+  }
+
+  .fortino-theme-segment__btn {
+    @apply flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted transition-colors hover:bg-default-hover;
+  }
+
+  .fortino-theme-segment__btn--active {
+    @apply bg-accent-soft font-semibold text-accent;
+  }
+
+  .fortino-admin-shell {
+    --fortino-sidebar-width: 16rem;
+    @apply min-h-dvh bg-background text-foreground;
+  }
+
+  .fortino-admin-shell[data-sidebar-collapsed="true"] {
+    --fortino-sidebar-width: 3.5rem;
+  }
+
+  .fortino-admin-header {
+    @apply hidden;
+  }
+
+  .fortino-admin-mobile-menu {
+    @apply fixed left-3 top-3 z-[9001] shadow-md;
+  }
+
+  .fortino-admin-main {
+    @apply ml-0 min-h-dvh flex-1 overflow-auto pt-4 md:ml-[var(--fortino-sidebar-width)] md:p-6 lg:p-8;
+  }
+
+  .fortino-admin-inner {
+    @apply mx-auto max-w-7xl;
+  }
+
+  .fortino-page-header-row {
+    @apply flex flex-wrap items-start justify-between gap-4;
+  }
+
+  .fortino-page-header-text {
+    @apply min-w-0 flex-1;
+  }
+
+  .fortino-page-header-actions {
+    @apply flex shrink-0 flex-wrap items-center gap-2;
+  }
+
+  .fortino-page-body {
+    @apply flex flex-col gap-4 md:gap-5;
+  }
+
+  .fortino-page-step {
+    @apply text-xs font-semibold uppercase tracking-wide text-accent;
+  }
+
+  .fortino-page-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground md:text-3xl;
+  }
+
+  .fortino-page-desc {
+    @apply mt-1 text-sm text-muted md:text-base;
+  }
+
+  .fortino-sidebar-backdrop {
+    @apply fixed inset-0 z-[7999] cursor-pointer border-0 bg-black/45;
+  }
+
+  .fortino-sidebar {
+    @apply fixed bottom-0 left-0 top-0 z-[8000] flex w-[var(--fortino-sidebar-width)] flex-col overflow-hidden border-r border-border bg-surface shadow-sm transition-[width,transform] duration-200;
+  }
+
+  @media (max-width: 1055px) {
+    .fortino-sidebar {
+      @apply w-[min(18rem,88vw)] -translate-x-full;
+    }
+
+    .fortino-admin-shell[data-mobile-nav-open="true"] .fortino-sidebar {
+      @apply translate-x-0;
+    }
+
+    .fortino-admin-main {
+      @apply ml-0;
+    }
+  }
+
+  .fortino-sidebar--collapsed .fortino-nav-item__label,
+  .fortino-sidebar--collapsed .fortino-nav-group__label,
+  .fortino-sidebar--collapsed .fortino-sidebar__title,
+  .fortino-sidebar--collapsed .fortino-theme-segment__label,
+  .fortino-sidebar--collapsed .fortino-sidebar-account__meta,
+  .fortino-sidebar--collapsed .fortino-sidebar-logout span:not(.sr-only) {
+    @apply sr-only;
+  }
+
+  .fortino-sidebar__head {
+    @apply flex min-h-11 shrink-0 items-center justify-between gap-1 border-b border-border px-3 py-2;
+  }
+
+  .fortino-sidebar__title {
+    @apply m-0 text-sm font-semibold text-foreground;
+  }
+
+  .fortino-sidebar__nav {
+    @apply flex-1 overflow-y-auto p-2;
+  }
+
+  .fortino-sidebar__foot {
+    @apply shrink-0 border-t border-border bg-surface-secondary p-3;
+  }
+
+  .fortino-nav-group__label {
+    @apply mx-3 mb-1 mt-2 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted;
+  }
+
+  .fortino-nav-item {
+    @apply flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground no-underline transition-colors hover:bg-default-hover;
+  }
+
+  .fortino-nav-item--active {
+    @apply bg-accent-soft font-semibold text-accent;
+  }
+
+  .fortino-nav-item__icon {
+    @apply flex shrink-0 items-center justify-center;
+  }
+
+  .fortino-user-avatar {
+    @apply inline-flex size-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground;
+  }
+
+  .fortino-user-avatar--lg {
+    @apply size-10 text-sm;
+  }
+
+  .fortino-sidebar-account {
+    @apply flex flex-col gap-3;
+  }
+
+  .fortino-sidebar-account__user {
+    @apply flex items-center gap-3;
+  }
+
+  .fortino-sidebar-account__name {
+    @apply block text-sm font-semibold;
+  }
+
+  .fortino-sidebar-account__role {
+    @apply block text-xs text-muted;
+  }
+
+  .fortino-stat-card__head {
+    @apply flex items-start justify-between gap-2;
+  }
+
+  .fortino-stat-card__label {
+    @apply text-xs font-medium uppercase tracking-wide text-muted;
+  }
+
+  .fortino-stat-card__value {
+    @apply mt-2 block text-2xl font-semibold tabular-nums;
+  }
+
+  .fortino-stat-card__hint {
+    @apply mt-1 block text-xs text-muted;
+  }
+
+  .fortino-dash-kpi-row {
+    @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6;
+  }
+
+  /* —— Dashboard home —— */
+  .fortino-dash-home {
+    @apply flex flex-col gap-6 lg:gap-7;
+  }
+
+  .fortino-dash-hero {
+    @apply flex flex-col gap-5 rounded-2xl border border-border bg-gradient-to-br from-surface via-surface to-accent-soft/25 p-5 shadow-sm md:p-6;
+  }
+
+  .fortino-dash-hero-main {
+    @apply flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .fortino-dash-hero-actions {
+    @apply flex shrink-0 flex-wrap items-center gap-2;
+  }
+
+  .fortino-dash-hero-delta {
+    @apply inline-flex items-center rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent;
+  }
+
+  .fortino-dash-hero-strip {
+    @apply grid gap-3 border-t border-border pt-4 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .fortino-dash-hero-strip__item {
+    @apply flex items-start gap-3 rounded-xl border border-border/80 bg-surface-secondary/50 px-3 py-3;
+  }
+
+  .fortino-dash-hero-strip__icon {
+    @apply flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent;
+  }
+
+  .fortino-dash-hero-strip__text {
+    @apply flex min-w-0 flex-col gap-0.5;
+  }
+
+  .fortino-dash-hero-strip__label {
+    @apply text-xs font-medium uppercase tracking-wide text-muted;
+  }
+
+  .fortino-dash-hero-strip__value {
+    @apply text-lg font-semibold tabular-nums text-foreground;
+  }
+
+  .fortino-dash-hero-strip__hint {
+    @apply text-xs text-muted;
+  }
+
+  .fortino-dash-analytics {
+    @apply grid gap-4 lg:grid-cols-2;
+  }
+
+  .fortino-dash-panel--chart {
+    @apply min-h-[18rem];
+  }
+
+  .fortino-dash-panel-link {
+    @apply inline-flex items-center gap-1 text-sm font-medium text-accent no-underline hover:underline;
+  }
+
+  .fortino-trend-badge {
+    @apply mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold;
+  }
+
+  .fortino-trend-badge--up {
+    @apply bg-success-soft text-success;
+  }
+
+  .fortino-trend-badge--down {
+    @apply bg-danger-soft text-danger;
+  }
+
+  .fortino-trend-badge--neutral {
+    @apply bg-surface-secondary text-muted;
+  }
+
+  .fortino-stat-card__trend {
+    @apply mt-2;
+  }
+
+  .fortino-chart-empty {
+    @apply m-0 px-4 py-8 text-center text-sm text-muted md:px-5;
+  }
+
+  .fortino-dash-hero-date {
+    @apply m-0 text-xs font-semibold uppercase tracking-wider text-accent;
+  }
+
+  .fortino-dash-hero-title {
+    @apply m-0 mt-1 text-2xl font-bold tracking-tight text-foreground md:text-3xl;
+  }
+
+  .fortino-dash-hero-desc {
+    @apply mt-2 flex flex-wrap items-center gap-2 text-sm text-muted;
+  }
+
+  .fortino-dash-alerts {
+    @apply flex flex-col gap-3;
+  }
+
+  .fortino-dash-alert-row {
+    @apply flex flex-col gap-2 sm:flex-row sm:items-center;
+  }
+
+  .fortino-dash-body {
+    @apply grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)];
+  }
+
+  .fortino-dash-body-main,
+  .fortino-dash-body-side {
+    @apply flex flex-col gap-4;
+  }
+
+  .fortino-dash-panel {
+    @apply overflow-hidden rounded-xl border border-border bg-surface shadow-sm;
+  }
+
+  .fortino-dash-panel--compact {
+    @apply p-0;
+  }
+
+  .fortino-dash-panel-head {
+    @apply flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3 md:px-5;
+  }
+
+  .fortino-dash-section-title {
+    @apply m-0 text-base font-semibold text-foreground md:text-lg;
+  }
+
+  .fortino-dash-section-desc {
+    @apply m-0 mt-0.5 text-sm text-muted;
+  }
+
+  .fortino-dash-empty-inline {
+    @apply flex items-center gap-3 px-4 py-6 text-sm text-muted md:px-5;
+  }
+
+  .fortino-dash-empty-icon--ok {
+    @apply shrink-0 text-success;
+  }
+
+  .fortino-dash-stock-list,
+  .fortino-dash-sales-list,
+  .fortino-dash-quick-list {
+    @apply m-0 list-none divide-y divide-border p-0;
+  }
+
+  .fortino-dash-stock-item,
+  .fortino-dash-sales-item {
+    @apply flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-default-hover md:px-5;
+  }
+
+  .fortino-dash-stock-main {
+    @apply flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3;
+  }
+
+  .fortino-dash-stock-name {
+    @apply truncate text-sm font-medium text-foreground;
+  }
+
+  .fortino-dash-stock-meta {
+    @apply flex shrink-0 items-center gap-2 text-sm;
+  }
+
+  .fortino-dash-sale-badge {
+    @apply shrink-0 rounded-lg bg-accent-soft px-2.5 py-1 text-sm font-semibold text-accent;
+  }
+
+  .fortino-dash-sale-body {
+    @apply min-w-0 flex-1;
+  }
+
+  .fortino-dash-sale-detail {
+    @apply m-0 truncate text-sm text-foreground;
+  }
+
+  .fortino-dash-sale-more {
+    @apply text-muted;
+  }
+
+  .fortino-dash-sale-time {
+    @apply mt-0.5 block text-xs text-muted;
+  }
+
+  .fortino-dash-quick-item {
+    @apply flex items-center gap-3 px-4 py-3 no-underline transition-colors hover:bg-default-hover md:px-5;
+  }
+
+  .fortino-dash-quick-icon {
+    @apply flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent;
+  }
+
+  .fortino-dash-quick-text {
+    @apply flex min-w-0 flex-1 flex-col gap-0.5;
+  }
+
+  .fortino-dash-quick-label {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .fortino-dash-quick-desc {
+    @apply text-xs text-muted;
+  }
+
+  .fortino-dash-panel .fortino-bar-chart,
+  .fortino-dash-panel .fortino-donut-chart,
+  .fortino-dash-panel .fortino-sales-trend,
+  .fortino-dash-panel .fortino-hbar-chart {
+    @apply p-4 md:p-5;
+  }
+
+  /* Stat cards */
+  .fortino-stat-card {
+    @apply h-full border border-border bg-surface shadow-sm transition-shadow hover:shadow-md;
+  }
+
+  .fortino-stat-card-link {
+    @apply block h-full no-underline;
+  }
+
+  .fortino-stat-card__icon {
+    @apply flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent;
+  }
+
+  .fortino-stat-card--success {
+    @apply border-l-4 border-l-success;
+  }
+
+  .fortino-stat-card--success .fortino-stat-card__icon {
+    @apply bg-success-soft text-success;
+  }
+
+  .fortino-stat-card--warning {
+    @apply border-l-4 border-l-warning;
+  }
+
+  .fortino-stat-card--warning .fortino-stat-card__icon {
+    @apply bg-warning-soft text-warning;
+  }
+
+  .fortino-stat-card--error {
+    @apply border-l-4 border-l-danger;
+  }
+
+  .fortino-stat-card--error .fortino-stat-card__icon {
+    @apply bg-danger-soft text-danger;
+  }
+
+  .fortino-stat-card--info {
+    @apply border-l-4 border-l-accent;
+  }
+
+  .fortino-stat-card--info .fortino-stat-card__icon {
+    @apply bg-accent-soft text-accent;
+  }
+
+  /* Charts */
+  .fortino-chart-caption {
+    @apply mb-4 flex flex-col gap-0.5;
+  }
+
+  .fortino-chart-caption strong {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  .fortino-chart-caption span {
+    @apply text-sm text-muted;
+  }
+
+  .fortino-bar-chart__plot {
+    @apply flex h-44 items-end justify-between gap-2 border-b border-border pb-2;
+  }
+
+  .fortino-bar-chart__col {
+    @apply flex min-w-0 flex-1 flex-col items-center gap-1;
+  }
+
+  .fortino-bar-chart__bar-wrap {
+    @apply flex h-36 w-full items-end justify-center;
+  }
+
+  .fortino-bar-chart__bar {
+    @apply w-full max-w-[2.5rem] min-w-[0.75rem] rounded-t-md bg-gradient-to-t from-accent to-accent/70 transition-all;
+  }
+
+  .fortino-bar-chart__label {
+    @apply text-[0.65rem] font-medium uppercase tracking-wide text-muted;
+  }
+
+  .fortino-bar-chart__value {
+    @apply text-[0.65rem] font-mono tabular-nums text-foreground;
+  }
+
+  /* Sales trend chart */
+  .fortino-sales-trend__caption {
+    @apply flex flex-wrap items-start justify-between gap-4;
+  }
+
+  .fortino-sales-trend__summary {
+    @apply flex flex-wrap gap-4 text-right;
+  }
+
+  .fortino-sales-trend__summary span {
+    @apply flex flex-col gap-0.5;
+  }
+
+  .fortino-sales-trend__summary strong {
+    @apply text-base font-semibold tabular-nums text-foreground md:text-lg;
+  }
+
+  .fortino-sales-trend__summary small {
+    @apply text-xs text-muted;
+  }
+
+  .fortino-sales-trend__plot {
+    @apply flex h-52 items-end justify-between gap-2 border-b border-border pb-2;
+  }
+
+  .fortino-sales-trend__col {
+    @apply flex min-w-0 flex-1 flex-col items-center gap-1;
+  }
+
+  .fortino-sales-trend__bar-wrap {
+    @apply relative flex h-40 w-full items-end justify-center;
+  }
+
+  .fortino-sales-trend__bar {
+    @apply w-full max-w-[2.75rem] min-w-[0.75rem] rounded-t-lg bg-gradient-to-t from-accent to-accent/60 transition-all;
+  }
+
+  .fortino-sales-trend__dot {
+    @apply absolute left-1/2 size-2 -translate-x-1/2 rounded-full bg-warning shadow-sm;
+  }
+
+  .fortino-sales-trend__label {
+    @apply text-[0.65rem] font-medium uppercase tracking-wide text-muted;
+  }
+
+  .fortino-sales-trend__value {
+    @apply text-[0.65rem] font-semibold tabular-nums text-foreground;
+  }
+
+  .fortino-sales-trend__count {
+    @apply text-[0.6rem] text-muted;
+  }
+
+  .fortino-sales-trend__legend {
+    @apply mt-3 flex flex-wrap gap-4 text-xs text-muted;
+  }
+
+  .fortino-sales-trend__legend span {
+    @apply inline-flex items-center gap-2;
+  }
+
+  .fortino-sales-trend__swatch {
+    @apply inline-block size-2.5 rounded-full;
+  }
+
+  .fortino-sales-trend__swatch--bar {
+    @apply bg-accent;
+  }
+
+  .fortino-sales-trend__swatch--dot {
+    @apply bg-warning;
+  }
+
+  /* Horizontal bar chart */
+  .fortino-hbar-chart__list {
+    @apply m-0 flex list-none flex-col gap-4 p-0;
+  }
+
+  .fortino-hbar-chart__row {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .fortino-hbar-chart__meta {
+    @apply grid grid-cols-[auto_1fr_auto] items-center gap-2;
+  }
+
+  .fortino-hbar-chart__rank {
+    @apply flex size-6 items-center justify-center rounded-md bg-accent-soft text-xs font-bold text-accent;
+  }
+
+  .fortino-hbar-chart__label {
+    @apply truncate text-sm font-medium text-foreground;
+  }
+
+  .fortino-hbar-chart__value {
+    @apply text-sm font-semibold tabular-nums text-foreground;
+  }
+
+  .fortino-hbar-chart__track {
+    @apply h-2 overflow-hidden rounded-full bg-surface-secondary;
+  }
+
+  .fortino-hbar-chart__fill {
+    @apply h-full rounded-full bg-gradient-to-r from-accent/80 to-accent transition-all;
+  }
+
+  .fortino-hbar-chart__sublabel {
+    @apply pl-8 text-xs text-muted;
+  }
+
+  .fortino-donut-chart__body {
+    @apply flex flex-col items-center gap-5 sm:flex-row sm:items-start;
+  }
+
+  .fortino-donut-chart__ring {
+    @apply relative size-36 shrink-0 rounded-full;
+  }
+
+  .fortino-donut-chart__hole {
+    @apply absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-surface text-center shadow-inner;
+  }
+
+  .fortino-donut-chart__center-label {
+    @apply text-[0.65rem] font-medium uppercase tracking-wide text-muted;
+  }
+
+  .fortino-donut-chart__center-value {
+    @apply text-xl font-bold tabular-nums text-foreground;
+  }
+
+  .fortino-donut-chart__legend {
+    @apply m-0 flex flex-1 list-none flex-col gap-2 p-0;
+  }
+
+  .fortino-donut-chart__legend li {
+    @apply grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-2 gap-y-0.5 text-sm;
+  }
+
+  .fortino-donut-chart__swatch {
+    @apply size-2.5 rounded-full;
+  }
+
+  .fortino-donut-chart__legend-label {
+    @apply text-muted;
+  }
+
+  .fortino-donut-chart__legend-value {
+    @apply font-mono tabular-nums text-foreground;
+  }
+
+  .fortino-donut-chart__legend-pct {
+    @apply text-xs text-muted;
+  }
+
+  /* Admin data panels & tables */
+  .fortino-data-panel {
+    @apply overflow-hidden border border-border bg-surface shadow-sm;
+  }
+
+  .fortino-data-panel--compact .fortino-data-panel__body {
+    @apply p-0;
+  }
+
+  .fortino-data-panel__head {
+    @apply flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3 md:px-5;
+  }
+
+  .fortino-data-panel__title {
+    @apply text-base font-semibold md:text-lg;
+  }
+
+  .fortino-data-panel__desc {
+    @apply text-sm text-muted;
+  }
+
+  .fortino-data-panel__actions {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .fortino-data-panel__body {
+    @apply p-0;
+  }
+
+  .fortino-data-panel__body > .fortino-toolbar {
+    @apply border-b border-border px-4 py-3 md:px-5;
+  }
+
+  .fortino-interactive-table {
+    @apply overflow-x-auto;
+  }
+
+  .fortino-interactive-table table {
+    @apply w-full min-w-[640px];
+  }
+
+  .fortino-page-toolbar {
+    @apply mb-4 flex flex-wrap items-end justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-sm;
+  }
+
+  .fortino-page-toolbar__grow {
+    @apply min-w-[12rem] flex-1;
+  }
+
+  .fortino-page-toolbar__group {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .fortino-page-stat-strip {
+    @apply flex flex-col gap-0.5;
+  }
+
+  .fortino-page-stat-strip__label {
+    @apply text-xs font-medium uppercase tracking-wide text-muted;
+  }
+
+  .fortino-page-stat-strip__value {
+    @apply text-lg font-semibold tabular-nums text-foreground;
+  }
+
+  .fortino-filter-tabs {
+    @apply mb-4;
+  }
+
+  .fortino-module-grid {
+    @apply grid gap-4 md:grid-cols-2 xl:grid-cols-3;
+  }
+
+  .fortino-module-card {
+    @apply rounded-xl border border-border bg-surface p-4 shadow-sm;
+  }
+
+  .fortino-cash-tile {
+    @apply h-full rounded-xl border border-border bg-surface p-5 shadow-sm;
+  }
+
+  .fortino-module-card-title {
+    @apply m-0 text-base font-semibold text-foreground;
+  }
+
+  .fortino-cash-page .fortino-module-card,
+  .fortino-cash-page .fortino-data-panel {
+    @apply h-full;
+  }
+
+  .fortino-pos-cart-line {
+    @apply flex items-center gap-2 rounded-lg border border-border bg-surface-secondary p-2;
+  }
+
+  .fortino-pos-cart-line--highlight {
+    @apply border-accent bg-accent-soft/40;
+  }
+
+  .fortino-pos-cart-qty {
+    @apply flex items-center gap-1 rounded-lg border border-border bg-background;
+  }
+
+  .fortino-pos-checkout-hint {
+    @apply rounded-lg border border-dashed border-border bg-surface-secondary px-3 py-2 text-xs text-muted;
+  }
+
+  /* —— POS mostrador —— */
+  .fortino-pos-cart-title {
+    @apply m-0 text-lg font-semibold text-foreground;
+  }
+
+  .fortino-pos-empty {
+    @apply flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-secondary px-6 py-12 text-center;
+  }
+
+  .fortino-pos-empty-icon {
+    @apply mb-3 text-muted opacity-60;
+  }
+
+  .fortino-pos-kbd-hint kbd {
+    @apply rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[0.65rem] font-semibold;
+  }
+
+  .fortino-cart-lines {
+    @apply m-0 flex list-none flex-col gap-2 p-0;
+  }
+
+  .fortino-cart-line {
+    @apply grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 rounded-xl border border-border bg-surface p-3 shadow-sm transition-colors;
+  }
+
+  .fortino-cart-line--flash {
+    @apply border-accent bg-accent-soft/50;
+  }
+
+  .fortino-cart-line-info {
+    @apply flex min-w-0 flex-col gap-0.5;
+  }
+
+  .fortino-cart-line-sku {
+    @apply text-xs font-semibold uppercase tracking-wide text-accent;
+  }
+
+  .fortino-cart-line-name {
+    @apply truncate text-sm font-medium text-foreground;
+  }
+
+  .fortino-cart-line-unit {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .fortino-cart-qty {
+    @apply flex items-center gap-1 rounded-lg border border-border bg-background px-1;
+  }
+
+  .fortino-cart-qty-value {
+    @apply min-w-[2.75ch] px-1 text-center text-sm font-semibold tabular-nums;
+  }
+
+  .fortino-cart-line-total {
+    @apply text-sm font-semibold;
+  }
+
+  .fortino-pos-checkout {
+    @apply lg:sticky lg:top-4 lg:self-start;
+  }
+
+  .fortino-pos-checkout-inner {
+    @apply flex flex-col gap-4 rounded-xl border border-border bg-surface p-4 shadow-md;
+  }
+
+  .fortino-pos-checkout-head {
+    @apply border-b border-border pb-3;
+  }
+
+  .fortino-pos-totals {
+    @apply flex flex-col gap-2;
+  }
+
+  .fortino-pos-total-row {
+    @apply flex items-center justify-between text-sm text-muted;
+  }
+
+  .fortino-pos-total-row--grand {
+    @apply border-t border-border pt-3 text-base font-semibold text-foreground;
+  }
+
+  .fortino-pos-grand-total {
+    @apply text-xl;
+  }
+
+  .fortino-pos-checkout-actions {
+    @apply flex flex-col gap-2;
+  }
+
+  .fortino-pos-pay-btn {
+    @apply w-full font-semibold;
+  }
+
+  .fortino-pos-search-form {
+    @apply mb-3 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-surface p-3 shadow-sm;
+  }
+
+  .fortino-pos-search-hint {
+    @apply mb-3 flex items-center gap-2 text-muted;
+  }
+
+  .fortino-search-results {
+    @apply m-0 flex list-none flex-col gap-1 overflow-hidden rounded-xl border border-border bg-surface shadow-md;
+  }
+
+  .fortino-search-result {
+    @apply flex w-full items-center justify-between gap-3 border-0 border-b border-border bg-transparent px-4 py-3 text-left transition-colors last:border-b-0;
+  }
+
+  .fortino-search-result:hover:not(:disabled) {
+    @apply bg-default-hover;
+  }
+
+  .fortino-search-result--active {
+    @apply bg-accent-soft;
+  }
+
+  .fortino-search-result--disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .fortino-search-result-main {
+    @apply flex min-w-0 flex-1 items-center gap-2;
+  }
+
+  .fortino-search-result-name {
+    @apply truncate text-sm font-medium text-foreground;
+  }
+
+  .fortino-search-result-meta {
+    @apply flex shrink-0 items-center gap-3;
+  }
+
+  .fortino-search-result-price {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .fortino-search-empty {
+    @apply flex items-center gap-2 rounded-xl border border-dashed border-border bg-surface-secondary px-4 py-6 text-sm text-muted;
+  }
+
+  .fortino-media-grid {
+    @apply grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6;
+  }
+
+  .fortino-media-card {
+    @apply flex flex-col gap-1 overflow-hidden rounded-xl border border-border bg-surface p-2 text-left transition-colors hover:border-accent hover:bg-accent-soft/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+  }
+
+  .fortino-media-card__img {
+    @apply aspect-square w-full rounded-lg bg-surface-secondary object-cover;
+  }
+
+  .fortino-media-card__name {
+    @apply truncate text-sm font-medium text-foreground;
+  }
+
+  .fortino-media-card__tags {
+    @apply truncate text-xs text-muted;
+  }
+
+  .fortino-purchase-line {
+    @apply items-end;
+  }
+
+  .fortino-purchase-line__qty {
+    @apply min-w-[5.5rem];
+  }
+
+  .fortino-purchase-line__cost {
+    @apply min-w-[6.5rem];
+  }
+
+  /* —— Modales —— */
+  .fortino-modal-backdrop {
+    @apply bg-black/50 backdrop-blur-[2px];
+  }
+
+  .fortino-modal-shell {
+    @apply max-h-[min(90dvh,52rem)] w-[min(calc(100vw-1.5rem),42rem)];
+  }
+
+  .fortino-modal-shell--sm {
+    @apply w-[min(calc(100vw-1.5rem),24rem)];
+  }
+
+  .fortino-modal-shell--md {
+    @apply w-[min(calc(100vw-1.5rem),32rem)];
+  }
+
+  .fortino-modal-shell--lg {
+    @apply w-[min(calc(100vw-1.5rem),42rem)];
+  }
+
+  .fortino-modal-shell--xl {
+    @apply w-[min(calc(100vw-1.5rem),52rem)];
+  }
+
+  .fortino-modal-shell--help {
+    @apply w-[min(calc(100vw-1.5rem),36rem)];
+  }
+
+  .fortino-modal-dialog {
+    @apply flex max-h-[inherit] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-xl;
+  }
+
+  .fortino-modal-header {
+    @apply shrink-0 gap-3 border-b border-border px-5 py-4 md:px-6;
+  }
+
+  .fortino-modal-header-text {
+    @apply min-w-0 flex-1;
+  }
+
+  .fortino-modal-kicker {
+    @apply m-0 mb-1 text-xs font-semibold uppercase tracking-wider text-accent;
+  }
+
+  .fortino-modal-title {
+    @apply text-lg font-semibold tracking-tight text-foreground md:text-xl;
+  }
+
+  .fortino-modal-subtitle {
+    @apply mt-1 text-sm text-muted;
+  }
+
+  .fortino-modal-body {
+    @apply min-h-0 flex-1 overflow-y-auto px-5 py-4 md:px-6 md:py-5;
+  }
+
+  .fortino-modal-footer {
+    @apply shrink-0 gap-2 border-t border-border bg-surface-secondary/60 px-5 py-3 md:px-6;
+  }
+
+  .fortino-modal-footer--split {
+    @apply flex items-center justify-between;
+  }
+
+  .fortino-modal-footer-start {
+    @apply flex min-w-0 items-center gap-2;
+  }
+
+  .fortino-modal-footer-end {
+    @apply flex shrink-0 items-center gap-2;
+  }
+
+  .fortino-help-modal-body {
+    @apply flex flex-col gap-4;
+  }
+
+  .fortino-help-progress {
+    @apply flex gap-1.5;
+  }
+
+  .fortino-help-progress-segment {
+    @apply h-1.5 min-w-[2rem] flex-1 rounded-full border-0 bg-border transition-colors;
+  }
+
+  .fortino-help-progress-segment--done {
+    @apply bg-accent/40;
+  }
+
+  .fortino-help-progress-segment--active {
+    @apply bg-accent;
+  }
+
+  .fortino-help-step-card {
+    @apply rounded-xl border border-border bg-surface-secondary/50 p-4 md:p-5;
+  }
+
+  .fortino-help-step-label {
+    @apply m-0 text-xs font-medium uppercase tracking-wide text-muted;
+  }
+
+  .fortino-help-step-title {
+    @apply m-0 mt-2 text-base font-semibold text-foreground md:text-lg;
+  }
+
+  .fortino-help-step-body {
+    @apply m-0 mt-2 text-sm leading-relaxed text-muted md:text-base;
+  }
+}

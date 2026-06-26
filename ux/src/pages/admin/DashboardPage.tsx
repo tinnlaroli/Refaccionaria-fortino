@@ -2,45 +2,45 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Link } from "react-router-dom";
 
-import {
-
-  Button,
-
-  InlineNotification,
-
-  Stack,
-
-  Tag,
-
-  Tile,
-
-} from "@carbon/react";
+import { Alert, Button, Chip } from "@heroui/react";
 
 import {
 
   ArrowRight,
 
-  CheckmarkFilled,
+  CircleCheck,
+
+  CreditCard,
+
+  DollarSign,
 
   Store,
 
-  WarningAlt,
+  AlertTriangle,
 
-} from "@carbon/icons-react";
+  TrendingUp,
+
+} from "lucide-react";
 
 import { fetchDashboardSummary, type DashboardSummary } from "../../api/dashboard.js";
 
 import { QUICK_ACTIONS } from "../../config/modules.js";
 
-import { BarChart } from "../../components/dashboard/BarChart.js";
+import { DashboardHeroStrip, formatHeroMoney } from "../../components/dashboard/DashboardHeroStrip.js";
 
 import { DonutChart } from "../../components/dashboard/DonutChart.js";
 
+import { HorizontalBarChart } from "../../components/dashboard/HorizontalBarChart.js";
+
+import { SalesTrendChart } from "../../components/dashboard/SalesTrendChart.js";
+
 import { StatCard } from "../../components/dashboard/StatCard.js";
 
-import { carbonNavIcon } from "../../components/carbon/CarbonNavIcons.js";
+import { HelpButton } from "../../components/help/HelpButton.js";
 
-import { ErrorBanner } from "../../components/carbon/PageFeedback.js";
+import { navIcon } from "../../components/ui/NavIcons.js";
+
+import { ErrorBanner } from "../../components/ui/PageFeedback.js";
 
 import { EmptyState } from "../../components/EmptyState.js";
 
@@ -54,7 +54,33 @@ import { usePermissions } from "../../hooks/usePermissions.js";
 
 import { getErrorMessage } from "../../lib/errors.js";
 
+import { calcTrendPct, formatMoney } from "../../lib/dashboardFormat.js";
+
 import { buildDashboardKpis, relativeSaleTime } from "./dashboardKpis.js";
+
+
+
+const PAYMENT_LABELS: Record<string, string> = {
+
+  cash: "Efectivo",
+
+  card: "Tarjeta",
+
+  transfer: "Transferencia",
+
+};
+
+
+
+const PAYMENT_COLORS: Record<string, string> = {
+
+  cash: "var(--fortino-success, #24a148)",
+
+  card: "var(--fortino-accent, #0f62fe)",
+
+  transfer: "var(--fortino-warning, #f1c21b)",
+
+};
 
 
 
@@ -154,7 +180,7 @@ export function DashboardPage() {
 
       list.push({
 
-        kind: "error" as const,
+        status: "danger" as const,
 
         title: `${summary.products.outOfStock} pieza(s) sin stock`,
 
@@ -172,7 +198,7 @@ export function DashboardPage() {
 
       list.push({
 
-        kind: "warning" as const,
+        status: "warning" as const,
 
         title: `${summary.products.lowStock} alerta(s) de stock bajo`,
 
@@ -200,13 +226,13 @@ export function DashboardPage() {
 
     return (
 
-      <Stack gap={4}>
+      <div className="flex flex-col gap-4">
 
         <ErrorBanner message={error} />
 
         <EmptyState title="No se pudo cargar el panel" description={error} />
 
-      </Stack>
+      </div>
 
     );
 
@@ -228,13 +254,15 @@ export function DashboardPage() {
 
 
 
-  const salesBars =
+  const salesTrend =
 
     summary.salesTrend7Days?.map((day) => ({
 
       label: shortDay(day.date),
 
-      value: day.total,
+      total: day.total,
+
+      count: day.count,
 
     })) ?? [];
 
@@ -250,7 +278,7 @@ export function DashboardPage() {
 
           value: summary.products!.healthy,
 
-          color: "var(--cds-support-success)",
+          color: "var(--fortino-success, #24a148)",
 
         },
 
@@ -260,7 +288,7 @@ export function DashboardPage() {
 
           value: summary.products!.lowStock,
 
-          color: "var(--cds-support-warning)",
+          color: "var(--fortino-warning, #f1c21b)",
 
         },
 
@@ -270,7 +298,7 @@ export function DashboardPage() {
 
           value: summary.products!.outOfStock,
 
-          color: "var(--cds-support-error)",
+          color: "var(--fortino-error, #da1e28)",
 
         },
 
@@ -280,9 +308,123 @@ export function DashboardPage() {
 
 
 
+  const paymentSegments =
+
+    summary.paymentBreakdown7Days?.map((row) => ({
+
+      label: PAYMENT_LABELS[row.method] ?? row.method,
+
+      value: row.total,
+
+      color: PAYMENT_COLORS[row.method] ?? "var(--fortino-accent, #0f62fe)",
+
+    })) ?? [];
+
+
+
+  const topProducts =
+
+    summary.topProducts7Days?.map((p) => ({
+
+      label: p.productName,
+
+      value: p.quantity,
+
+      sublabel: formatMoney(p.revenue),
+
+    })) ?? [];
+
+
+
   const lowStockItems = summary.lowStockItems ?? [];
 
   const recentSales = summary.recentSales ?? [];
+
+
+
+  const heroStripItems = [];
+
+  if (canSales && summary.salesToday) {
+
+    heroStripItems.push({
+
+      key: "today",
+
+      label: "Hoy",
+
+      value: formatHeroMoney(summary.salesToday.total),
+
+      hint: `${summary.salesToday.count} ventas`,
+
+      icon: <DollarSign size={18} />,
+
+    });
+
+    if (summary.salesWeek) {
+
+      heroStripItems.push({
+
+        key: "week",
+
+        label: "Semana",
+
+        value: formatHeroMoney(summary.salesWeek.total),
+
+        hint: `${summary.salesWeek.count} operaciones`,
+
+        icon: <TrendingUp size={18} />,
+
+      });
+
+    }
+
+  }
+
+  if (canProducts && summary.inventoryValue) {
+
+    heroStripItems.push({
+
+      key: "stock-value",
+
+      label: "Inventario",
+
+      value: formatHeroMoney(summary.inventoryValue.atSale),
+
+      hint: "Valor a precio de venta",
+
+      icon: <Store size={18} />,
+
+    });
+
+  }
+
+  if (summary.cash) {
+
+    heroStripItems.push({
+
+      key: "shifts",
+
+      label: "Cajas",
+
+      value: String(summary.cash.openShifts),
+
+      hint: summary.cash.openShifts > 0 ? "Turnos abiertos" : "Sin turno activo",
+
+      icon: <CreditCard size={18} />,
+
+    });
+
+  }
+
+
+
+  const salesDelta =
+
+    canSales && summary.salesToday && summary.salesYesterday
+
+      ? calcTrendPct(summary.salesToday.total, summary.salesYesterday.total)
+
+      : null;
 
 
 
@@ -292,29 +434,65 @@ export function DashboardPage() {
 
       <header className="fortino-dash-hero">
 
-        <div className="fortino-dash-hero-text">
+        <div className="fortino-dash-hero-main">
 
-          <p className="fortino-dash-hero-date">{formatDate()}</p>
+          <div className="fortino-dash-hero-text">
 
-          <h1 className="fortino-dash-hero-title">
+            <p className="fortino-dash-hero-date">{formatDate()}</p>
 
-            {greeting()}, {user?.fullName?.split(" ")[0] ?? "equipo"}
+            <h1 className="fortino-dash-hero-title">
 
-          </h1>
+              {greeting()}, {user?.fullName?.split(" ")[0] ?? "equipo"}
 
-          <p className="fortino-dash-hero-desc">
+            </h1>
 
-            Resumen operativo · <Tag type="gray" size="sm">{roleLabel}</Tag>
+            <p className="fortino-dash-hero-desc">
 
-          </p>
+              Panel operativo ·{" "}
+
+              <Chip size="sm" variant="flat">
+
+                <Chip.Label>{roleLabel}</Chip.Label>
+
+              </Chip>
+
+              {salesDelta !== null && salesDelta !== 0 && (
+
+                <span className="fortino-dash-hero-delta">
+
+                  {salesDelta > 0 ? "+" : ""}
+
+                  {salesDelta}% ventas vs ayer
+
+                </span>
+
+              )}
+
+            </p>
+
+          </div>
+
+          <div className="fortino-dash-hero-actions">
+
+            <HelpButton variant="secondary" showLabel />
+
+            <Link to="/">
+
+              <Button variant="primary" size="lg">
+
+                <Store size={18} />
+
+                Abrir mostrador
+
+              </Button>
+
+            </Link>
+
+          </div>
 
         </div>
 
-        <Button as={Link} to="/" kind="primary" renderIcon={Store} size="lg">
-
-          Abrir mostrador
-
-        </Button>
+        {heroStripItems.length > 0 && <DashboardHeroStrip items={heroStripItems} />}
 
       </header>
 
@@ -328,19 +506,31 @@ export function DashboardPage() {
 
             <div key={alert.to} className="fortino-dash-alert-row">
 
-              <InlineNotification
-                kind={alert.kind}
-                lowContrast
-                title={alert.title}
-                subtitle={alert.text}
-                hideCloseButton
-              />
+              <Alert status={alert.status} className="flex-1">
 
-              <Button as={Link} to={alert.to} kind="ghost" size="sm" renderIcon={ArrowRight}>
+                <Alert.Indicator />
 
-                {alert.cta}
+                <Alert.Content>
 
-              </Button>
+                  <Alert.Title>{alert.title}</Alert.Title>
+
+                  <Alert.Description>{alert.text}</Alert.Description>
+
+                </Alert.Content>
+
+              </Alert>
+
+              <Link to={alert.to}>
+
+                <Button variant="ghost" size="sm">
+
+                  {alert.cta}
+
+                  <ArrowRight size={16} />
+
+                </Button>
+
+              </Link>
 
             </div>
 
@@ -374,6 +564,8 @@ export function DashboardPage() {
 
               to={kpi.to}
 
+              delta={kpi.delta}
+
             />
 
           ))}
@@ -384,37 +576,111 @@ export function DashboardPage() {
 
 
 
+      <section className="fortino-dash-analytics" aria-label="Análisis operativo">
+
+        {canSales && salesTrend.length > 0 && (
+
+          <div className="fortino-dash-panel fortino-dash-panel--chart">
+
+            <SalesTrendChart
+
+              title="Tendencia de ventas"
+
+              subtitle="Ingresos y operaciones · últimos 7 días"
+
+              points={salesTrend}
+
+            />
+
+          </div>
+
+        )}
+
+
+
+        {canSales && paymentSegments.length > 0 && (
+
+          <div className="fortino-dash-panel fortino-dash-panel--compact">
+
+            <DonutChart
+
+              title="Mix de cobro"
+
+              subtitle="Por forma de pago · 7 días"
+
+              segments={paymentSegments}
+
+              centerLabel="Total"
+
+              centerValue={formatHeroMoney(
+
+                summary.paymentBreakdown7Days?.reduce((s, p) => s + p.total, 0) ?? 0,
+
+              )}
+
+            />
+
+          </div>
+
+        )}
+
+
+
+        {canSales && topProducts.length > 0 && (
+
+          <div className="fortino-dash-panel fortino-dash-panel--chart">
+
+            <HorizontalBarChart
+
+              title="Productos más vendidos"
+
+              subtitle="Unidades vendidas · 7 días"
+
+              points={topProducts}
+
+              formatValue={(v) => `${v} uds`}
+
+            />
+
+          </div>
+
+        )}
+
+
+
+        {canProducts && inventorySegments.length > 0 && (
+
+          <div className="fortino-dash-panel fortino-dash-panel--compact">
+
+            <DonutChart
+
+              title="Salud del inventario"
+
+              subtitle="Piezas activas por estado"
+
+              segments={inventorySegments}
+
+              centerLabel="Activos"
+
+              centerValue={summary.products!.active}
+
+            />
+
+          </div>
+
+        )}
+
+      </section>
+
+
+
       <div className="fortino-dash-body">
 
         <div className="fortino-dash-body-main">
 
-          {canSales && salesBars.length > 0 && (
-
-            <Tile className="fortino-dash-panel">
-
-              <BarChart
-
-                title="Ventas — últimos 7 días"
-
-                subtitle="Total diario de operaciones completadas"
-
-                points={salesBars}
-
-                valuePrefix="$"
-
-                formatValue={(v) => `$${v.toFixed(2)}`}
-
-              />
-
-            </Tile>
-
-          )}
-
-
-
           {canProducts && (
 
-            <Tile className="fortino-dash-panel">
+            <div className="fortino-dash-panel">
 
               <div className="fortino-dash-panel-head">
 
@@ -430,9 +696,11 @@ export function DashboardPage() {
 
                 </div>
 
-                <Link to="/app/inventario?bajo=1" className="cds--link">
+                <Link to="/app/inventario?bajo=1" className="fortino-dash-panel-link">
 
                   Ver inventario
+
+                  <ArrowRight size={14} />
 
                 </Link>
 
@@ -444,7 +712,7 @@ export function DashboardPage() {
 
                 <div className="fortino-dash-empty-inline">
 
-                  <CheckmarkFilled size={20} className="fortino-dash-empty-icon--ok" />
+                  <CircleCheck size={20} className="fortino-dash-empty-icon--ok" />
 
                   <span>Inventario en orden — no hay alertas pendientes.</span>
 
@@ -460,11 +728,11 @@ export function DashboardPage() {
 
                       <div className="fortino-dash-stock-main">
 
-                        <Tag type="gray" size="sm" className="mono">
+                        <Chip size="sm" variant="flat">
 
-                          {item.sku}
+                          <Chip.Label className="mono">{item.sku}</Chip.Label>
 
-                        </Tag>
+                        </Chip>
 
                         <span className="fortino-dash-stock-name">{item.name}</span>
 
@@ -498,7 +766,7 @@ export function DashboardPage() {
 
               )}
 
-            </Tile>
+            </div>
 
           )}
 
@@ -508,33 +776,9 @@ export function DashboardPage() {
 
         <aside className="fortino-dash-body-side">
 
-          {canProducts && inventorySegments.length > 0 && (
-
-            <Tile className="fortino-dash-panel fortino-dash-panel--compact">
-
-              <DonutChart
-
-                title="Salud del inventario"
-
-                subtitle="Piezas activas por estado"
-
-                segments={inventorySegments}
-
-                centerLabel="Activos"
-
-                centerValue={summary.products!.active}
-
-              />
-
-            </Tile>
-
-          )}
-
-
-
           {canSales && (
 
-            <Tile className="fortino-dash-panel">
+            <div className="fortino-dash-panel">
 
               <div className="fortino-dash-panel-head">
 
@@ -546,9 +790,11 @@ export function DashboardPage() {
 
                 </div>
 
-                <Link to="/app/ventas" className="cds--link">
+                <Link to="/app/ventas" className="fortino-dash-panel-link">
 
                   Historial
+
+                  <ArrowRight size={14} />
 
                 </Link>
 
@@ -566,11 +812,15 @@ export function DashboardPage() {
 
                   action={
 
-                    <Button as={Link} to="/" kind="tertiary" size="sm">
+                    <Link to="/">
 
-                      Ir al mostrador
+                      <Button variant="tertiary" size="sm">
 
-                    </Button>
+                        Ir al mostrador
+
+                      </Button>
+
+                    </Link>
 
                   }
 
@@ -632,7 +882,7 @@ export function DashboardPage() {
 
               )}
 
-            </Tile>
+            </div>
 
           )}
 
@@ -640,15 +890,19 @@ export function DashboardPage() {
 
           {quickActions.length > 0 && (
 
-            <Tile className="fortino-dash-panel fortino-dash-panel--compact">
+            <div className="fortino-dash-panel fortino-dash-panel--compact">
 
-              <h2 className="fortino-dash-section-title">Accesos rápidos</h2>
+              <div className="fortino-dash-panel-head">
+
+                <h2 className="fortino-dash-section-title">Accesos rápidos</h2>
+
+              </div>
 
               <ul className="fortino-dash-quick-list">
 
                 {quickActions.map((action) => {
 
-                  const Icon = carbonNavIcon(action.icon);
+                  const Icon = navIcon(action.icon);
 
                   return (
 
@@ -682,7 +936,7 @@ export function DashboardPage() {
 
               </ul>
 
-            </Tile>
+            </div>
 
           )}
 
@@ -690,17 +944,17 @@ export function DashboardPage() {
 
           {!canSales && !canProducts && (
 
-            <Tile className="fortino-dash-panel">
+            <div className="fortino-dash-panel">
 
               <div className="fortino-dash-empty-inline">
 
-                <WarningAlt size={20} />
+                <AlertTriangle size={20} />
 
                 <span>Tu perfil tiene acceso limitado al panel.</span>
 
               </div>
 
-            </Tile>
+            </div>
 
           )}
 
