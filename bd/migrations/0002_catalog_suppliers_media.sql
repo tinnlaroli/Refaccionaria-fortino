@@ -3,7 +3,6 @@
 CREATE TYPE "purchase_status" AS ENUM ('draft', 'completed', 'cancelled');
 
 ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "unit_of_measure" text DEFAULT 'PZA' NOT NULL;
-ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "brand" text;
 ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "presentation" text;
 ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "vehicle_compatibility" text;
 ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "primary_media_id" uuid;
