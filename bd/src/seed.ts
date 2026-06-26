@@ -35,13 +35,13 @@ const PERMISSION_KEYS = [
   "roles.manage",
 ] as const;
 
-const CASHIER_PERMISSIONS = new Set([
+const CASHIER_PERMISSIONS = new Set<string>([
   "products.view",
   "sales.create",
   "cash.open_shift",
   "cash.close_shift",
   "cash.register_movement",
-] as const);
+]);
 
 async function seed() {
   const { db, client } = createDb(connectionString);
@@ -81,7 +81,7 @@ async function seed() {
 
   // Cajero obtiene permisos de mostrador
   for (const perm of allPerms.filter((p) =>
-    CASHIER_PERMISSIONS.has(p.key as typeof p.key),
+    CASHIER_PERMISSIONS.has(p.key),
   )) {
     await db
       .insert(rolePermissions)
