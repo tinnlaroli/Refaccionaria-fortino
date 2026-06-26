@@ -1,3 +1,4 @@
+import { uuid } from "../lib/uuid.js";
 import {
   createContext,
   useCallback,
@@ -50,7 +51,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const push = useCallback(
     (message: string, type: ToastType = "info", title?: string) => {
-      const id = crypto.randomUUID();
+      const id = uuid();
       setToasts((prev) => [...prev.slice(-4), { id, message, type, title }]);
       window.setTimeout(() => dismiss(id), 5000);
     },

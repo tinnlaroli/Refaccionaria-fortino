@@ -19,6 +19,7 @@ import { useAuth } from "../../context/AuthContext.js";
 import { useToast } from "../../context/ToastContext.js";
 import { usePermissions } from "../../hooks/usePermissions.js";
 import { getErrorMessage } from "../../lib/errors.js";
+import { uuid } from "../../lib/uuid.js";
 import { positiveInt, price, required } from "../../lib/validation.js";
 
 const SELECT_CLASS =
@@ -49,7 +50,7 @@ function todayIsoDate() {
 
 function newLine(): PurchaseLine {
   return {
-    key: crypto.randomUUID(),
+    key: uuid(),
     productId: "",
     quantity: "1",
     unitCost: "",

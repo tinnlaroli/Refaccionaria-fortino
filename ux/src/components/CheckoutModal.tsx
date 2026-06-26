@@ -12,6 +12,7 @@ import { getCachedShift } from "../api/cash.js";
 import { createSaleOnline, queueSaleOffline } from "../api/sales.js";
 import { getErrorMessage } from "../lib/errors.js";
 import { cashReceived } from "../lib/validation.js";
+import { uuid } from "../lib/uuid.js";
 import { AppModal } from "./ui/AppModal.js";
 import { EX } from "../config/fieldExamples.js";
 import { FortinoNumberField } from "./ui/FortinoNumberField.js";
@@ -114,7 +115,7 @@ export function CheckoutModal({ open, onClose, onSuccess }: Props) {
     setLoading(true);
     setError(null);
 
-    const clientUuid = crypto.randomUUID();
+    const clientUuid = uuid();
     const soldAt = new Date().toISOString();
     const snapshotItems = [...lines];
     const received = paymentMethod === "cash" ? amountReceived : undefined;
