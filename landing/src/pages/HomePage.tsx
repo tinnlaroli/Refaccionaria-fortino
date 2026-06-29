@@ -19,6 +19,8 @@ const HIGHLIGHTS = [
 export function HomePage() {
   return (
     <>
+      <div className="grain-overlay" aria-hidden="true" />
+
       <PageHead
         title="Inicio"
         description={`${SITE.name} — ${SITE.tagline} en ${SITE.city}.`}
@@ -48,7 +50,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="section location-section">
+      <section className="location-section">
         <div className="container location-grid">
           <div className="location-info">
             <h2>Visítanos</h2>
@@ -63,7 +65,7 @@ export function HomePage() {
               src={SITE.mapsEmbed}
               width="100%"
               height="100%"
-              style={{ border: 0, borderRadius: 12, minHeight: 320 }}
+              style={{ border: 0, minHeight: 340 }}
               allowFullScreen
               loading="lazy"
               referrerPolicy="strict-origin-when-cross-origin"
@@ -73,7 +75,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="section cta-band">
+      <section className="cta-band">
         <div className="container cta-inner">
           <div>
             <h2>¿Listo para tu siguiente servicio?</h2>
