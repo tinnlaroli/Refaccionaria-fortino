@@ -30,14 +30,66 @@ export function LoginModal({ isOpen, onClose }: Props) {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     
-    // Simulate a brief loading state before redirecting to the POS
-    setTimeout(() => {
-      window.location.href = SITE.posUrl;
-    }, 600);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: username, password })
+      });
+      
+      if (!res.ok) {
+        throw new Error("Credenciales inválidas");
+      }
+      
+      const data = await res.json();
+      
+      const request = indexedDB.open("refaccionaria-pos", 1);
+      
+      request.onupgradeneeded = (e) => {
+        const db = (e.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains("authCache")) {
+          db.createObjectStore("authCache", { keyPath: "id" });
+        }
+      };
+
+      request.onsuccess = (e) => {
+        const db = (e.target as IDBOpenDBRequest).result;
+        try {
+          const tx = db.transaction("authCache", "readwrite");
+          tx.objectStore("authCache").put({
+            id: "session",
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+            user: data.user,
+            expiresAt: Date.now() + 8 * 60 * 60 * 1000
+          });
+          tx.oncomplete = () => {
+            window.location.href = SITE.posUrl;
+          };
+          tx.onerror = () => {
+            window.location.href = SITE.posUrl;
+          };
+        } catch (err) {
+          // If object store doesn't exist somehow
+          window.location.href = SITE.posUrl;
+        }
+      };
+      
+      request.onerror = () => {
+        window.location.href = SITE.posUrl;
+      };
+
+    } catch (err: any) {
+      setError(err.message || "Error de conexión");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -61,6 +113,11 @@ export function LoginModal({ isOpen, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
+          {error && (
+            <div style={{ color: "var(--warning)", marginBottom: "1rem", fontSize: "0.875rem", textAlign: "center", background: "color-mix(in srgb, var(--warning) 15%, transparent)", padding: "0.5rem", borderRadius: "6px" }}>
+              {error}
+            </div>
+          )}
           <div className="form-group">
             <label htmlFor="username">Usuario</label>
             <input 
