@@ -34,7 +34,7 @@ export const EX = {
   cashMovementNote: "Ej. Pago renta del local",
   cashAmount: "Ej. 500.00",
   checkoutAmount: "Ej. 350.00",
-  loginEmail: "Ej. admin@fortino.com",
+  loginEmail: "correo@ejemplo.com",
   searchProduct: "Ej. SKU o nombre de pieza…",
   searchMedia: "Ej. frenos, aceite…",
 } as const;

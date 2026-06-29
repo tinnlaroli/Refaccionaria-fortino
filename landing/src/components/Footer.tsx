@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { SITE } from "../config/site";
 
 export function Footer() {
@@ -6,34 +5,24 @@ export function Footer() {
 
   return (
     <footer className="site-footer">
-      <div className="container footer-grid">
-        <div>
+      <div className="container footer-inner">
+        <div className="footer-brand">
           <strong>{SITE.name}</strong>
-          <p>{SITE.tagline}</p>
+          <p className="muted">{SITE.tagline}</p>
+        </div>
+        <div className="footer-contact">
+          <p>
+            <a href={`tel:${SITE.phone.replace(/\s/g, "")}`} className="footer-phone">
+              {SITE.phone}
+            </a>
+          </p>
+          <p className="muted">{SITE.hours}</p>
           <p className="muted">{SITE.city}</p>
         </div>
-        <div>
-          <strong>Enlaces</strong>
-          <ul className="footer-links">
-            <li>
-              <Link to="/catalogo">Catálogo</Link>
-            </li>
-            <li>
-              <Link to="/contacto">Ubicación y contacto</Link>
-            </li>
-            <li>
-              <a href={SITE.posUrl}>Acceso empleados (POS)</a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <strong>Contacto</strong>
-          <p>
-            <a href={`tel:${SITE.phone.replace(/\s/g, "")}`}>{SITE.phone}</a>
-          </p>
-          <p>
-            <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
-          </p>
+        <div className="footer-pos">
+          <a href={SITE.posUrl} className="btn btn-primary btn-sm">
+            Punto de venta
+          </a>
         </div>
       </div>
       <p className="footer-copy container">
