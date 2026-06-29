@@ -65,34 +65,46 @@ export function HomePage() {
       />
 
       {/* ══════ Hero ══════ */}
-      <section className="hero">
-        <div className="hero-glow" aria-hidden="true" />
-        <div className="container hero-inner">
-          <Reveal stagger={0}>
-            <p className="eyebrow">{SITE.city}</p>
-          </Reveal>
-          <Reveal stagger={0.12}>
-            <h1>{SITE.name}</h1>
-          </Reveal>
-          <Reveal stagger={0.24}>
-            <p className="hero-lead">
-              Repuestos, aceites y refacciones para tu vehículo, con el
-              compromiso de servir a Tezonapa y toda la región.
-            </p>
-          </Reveal>
-          <Reveal stagger={0.36}>
-            <div className="hero-actions">
-              <a href={SITE.posUrl} className="btn btn-primary btn-lg pulse-glow">
-                Ir al punto de venta
-              </a>
-              <a href={`tel:${SITE.phone.replace(/\s/g, "")}`} className="btn btn-ghost btn-lg">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "0.4rem" }}>
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                </svg>
-                Llamar ahora
-              </a>
-            </div>
-          </Reveal>
+      <section className="hero" style={{ position: "relative", overflow: "hidden", minHeight: "80vh", display: "flex", alignItems: "center" }}>
+        <div className="hero-glow" aria-hidden="true" style={{ background: "radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%)" }} />
+        
+        {/* Abstract Background Element */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.1, zIndex: -1, backgroundImage: "url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=2000')", backgroundSize: "cover", backgroundPosition: "center", filter: "grayscale(100%)" }} />
+
+        <div className="container hero-inner" style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center", padding: "4rem 0" }}>
+            <Reveal stagger={0}>
+              <div style={{ display: "inline-block", padding: "0.5rem 1rem", background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)", borderRadius: "2rem", marginBottom: "1.5rem", fontSize: "0.875rem", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                {SITE.city}
+              </div>
+            </Reveal>
+            <Reveal stagger={0.12}>
+              <h1 style={{ fontSize: "clamp(3rem, 8vw, 5.5rem)", lineHeight: 1.1, marginBottom: "1.5rem", background: "linear-gradient(to right, var(--text), var(--text-muted))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                {SITE.name}
+              </h1>
+            </Reveal>
+            <Reveal stagger={0.24}>
+              <p className="hero-lead" style={{ fontSize: "clamp(1.125rem, 2vw, 1.5rem)", color: "var(--text-muted)", marginBottom: "2.5rem", maxWidth: "600px", margin: "0 auto 2.5rem" }}>
+                Potencia y confiabilidad para tu vehículo. Encuentra las mejores refacciones, aceites y accesorios en la región.
+              </p>
+            </Reveal>
+            <Reveal stagger={0.36}>
+              <div className="hero-actions" style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+                <a href="#catalogo" className="btn btn-primary btn-lg pulse-glow" style={{ padding: "1rem 2rem", fontSize: "1.125rem", borderRadius: "3rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  Ver Catálogo
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </a>
+                <a href={`tel:${SITE.phone.replace(/\s/g, "")}`} className="btn btn-ghost btn-lg" style={{ padding: "1rem 2rem", fontSize: "1.125rem", borderRadius: "3rem", background: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "0.5rem" }}>
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                  Llamar ahora
+                </a>
+              </div>
+            </Reveal>
+          </div>
         </div>
       </section>
 
