@@ -27,30 +27,38 @@ function StatItem({ label, end, suffix = "" }: { label: string; end: number; suf
   );
 }
 
+import { Droplet, Disc, Filter, BatteryCharging, Settings2, Sparkles } from "lucide-react";
+
 const SERVICES = [
   {
     title: "Aceites y lubricantes",
     text: "Aceites de motor, transmisión y lubricantes para el mantenimiento de tu vehículo.",
+    icon: Droplet,
   },
   {
     title: "Sistema de frenos",
     text: "Pastillas, discos y componentes de frenado para todas las marcas y modelos.",
+    icon: Disc,
   },
   {
     title: "Filtros",
     text: "Filtros de aceite, aire, combustible y cabina para proteger tu motor.",
+    icon: Filter,
   },
   {
     title: "Baterías",
     text: "Baterías de arranque con garantía. Entrega inmediata en mostrador.",
+    icon: BatteryCharging,
   },
   {
     title: "Suspensión y dirección",
     text: "Amortiguadores, resortes, rótulas y piezas de suspensión.",
+    icon: Settings2,
   },
   {
     title: "Cuidado automotriz",
     text: "Limpiaparabrisas, aditivos, anticongelantes y productos de limpieza.",
+    icon: Sparkles,
   },
 ] as const;
 
@@ -181,25 +189,62 @@ export function HomePage() {
       </section>
 
       {/* ══════ Services ══════ */}
-      <section className="services-section">
+      <section className="services-section" style={{ padding: "5rem 0", position: "relative" }}>
         <div className="section-divider-top" aria-hidden="true" />
         <div className="container">
           <Reveal>
-            <p className="eyebrow" style={{ textAlign: "center", marginBottom: "0.25rem" }}>Lo que ofrecemos</p>
-            <h2 className="section-title">Todo lo que tu vehículo necesita</h2>
+            <p className="eyebrow" style={{ textAlign: "center", marginBottom: "0.5rem", color: "var(--accent)" }}>Lo que ofrecemos</p>
+            <h2 className="section-title" style={{ textAlign: "center", marginBottom: "3rem", fontSize: "2.5rem" }}>Todo lo que tu vehículo necesita</h2>
           </Reveal>
-          <div className="services-grid">
-            {SERVICES.map((svc, i) => (
-              <Reveal key={svc.title} stagger={i * 0.07}>
-                <article className="service-card">
-                  <div className="service-icon-wrap">
-                    <span className="service-icon-label">{svc.title.charAt(0)}</span>
-                  </div>
-                  <h3>{svc.title}</h3>
-                  <p>{svc.text}</p>
-                </article>
-              </Reveal>
-            ))}
+          <div className="services-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
+            {SERVICES.map((svc, i) => {
+              const Icon = svc.icon;
+              return (
+                <Reveal key={svc.title} stagger={i * 0.1}>
+                  <article className="service-card" style={{ 
+                    background: "color-mix(in srgb, var(--surface) 80%, transparent)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    border: "1px solid color-mix(in srgb, var(--border) 50%, transparent)",
+                    borderRadius: "16px",
+                    padding: "2rem",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                    position: "relative",
+                    overflow: "hidden"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-8px)";
+                    e.currentTarget.style.boxShadow = "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)";
+                    e.currentTarget.style.borderColor = "var(--accent)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
+                    e.currentTarget.style.borderColor = "color-mix(in srgb, var(--border) 50%, transparent)";
+                  }}
+                  >
+                    <div className="service-icon-wrap" style={{ 
+                      width: "56px", 
+                      height: "56px", 
+                      borderRadius: "12px", 
+                      background: "color-mix(in srgb, var(--accent) 15%, transparent)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--accent)",
+                      marginBottom: "1.5rem",
+                      transition: "transform 0.3s ease"
+                    }}>
+                      <Icon size={28} strokeWidth={1.5} />
+                    </div>
+                    <h3 style={{ fontSize: "1.25rem", marginBottom: "0.75rem", fontWeight: 600 }}>{svc.title}</h3>
+                    <p style={{ color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>{svc.text}</p>
+                  </article>
+                </Reveal>
+              );
+            })}
           </div>
         </div>
       </section>
